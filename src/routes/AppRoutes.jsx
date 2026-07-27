@@ -19,6 +19,9 @@ import OrderDetail from "../pages/OrdersDetail";
 import ScrollToTop from "../components/common/ScrollToTop";
 import ProtectedRoute from "./ProtectedRoute";
 import WriteReview from "../pages/WriteReview";
+
+import Categories from "../pages/Categories";
+import CategoryProducts from "../pages/CategoryProducts";
 export default function AppRoutes() {
   return (
     <>
@@ -31,9 +34,9 @@ export default function AppRoutes() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
-
           <Route path="/wishlist" element={<WishList />} />
-
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/category/:slug" element={<CategoryProducts />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success" element={<OrderSuccess />} />
