@@ -1,28 +1,49 @@
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+
 import Countdown from "./Countdown";
 import FlashSaleCard from "./FlashSaleCard";
-import flashSale from "../../data/flashSale";
+import products from "../../data/products";
 
 export default function FlashSale() {
+  const flashSale = products.filter((product) => product.flashSale).slice(0, 4);
   return (
-    <section className="py-24 bg-linear-to-r from-rose-50 to-pink-100">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex flex-col lg:flex-row justify-between items-center mb-16">
+    <section className="relative overflow-hidden bg-linear-to-b from-rose-50 via-white to-rose-50 py-24">
+      {/* Background */}
+
+      <div className="absolute -left-32 top-0 h-80 w-80 rounded-full bg-rose-200/20 blur-3xl"></div>
+
+      <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-pink-200/20 blur-3xl"></div>
+
+      <div className="relative mx-auto max-w-7xl px-6">
+        <div className="flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-center">
           <div>
-            <p className="uppercase tracking-[4px] text-red-500">
-              Limited Time Offer
+            <span className="inline-flex rounded-full bg-red-100 px-5 py-2 text-sm font-semibold text-red-600">
+              🔥 Limited Time Offer
+            </span>
+
+            <h2 className="mt-6 text-4xl font-bold md:text-5xl">Flash Sale</h2>
+
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-500">
+              Save big on our most popular skincare products before the deals
+              disappear.
             </p>
 
-            <h2 className="text-5xl font-bold mt-3">Flash Sale</h2>
-
-            <Countdown />
+            <div className="mt-8">
+              <Countdown />
+            </div>
           </div>
 
-          <button className="mt-8 lg:mt-0 bg-rose-600 text-white px-8 py-4 rounded-full hover:bg-rose-700">
+          <Link
+            to="/shop?flashSale=true"
+            className="inline-flex items-center gap-2 rounded-full bg-rose-600 px-7 py-4 font-semibold text-white transition hover:bg-rose-700"
+          >
             View All Deals
-          </button>
+            <ArrowRight size={18} />
+          </Link>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="mt-20 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {flashSale.map((item) => (
             <FlashSaleCard key={item.id} product={item} />
           ))}

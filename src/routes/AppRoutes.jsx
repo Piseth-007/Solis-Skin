@@ -22,6 +22,9 @@ import WriteReview from "../pages/WriteReview";
 
 import Categories from "../pages/Categories";
 import CategoryProducts from "../pages/CategoryProducts";
+
+import Brands from "../pages/Brands";
+import BrandProducts from "../pages/BrandProducts";
 export default function AppRoutes() {
   return (
     <>
@@ -44,6 +47,8 @@ export default function AppRoutes() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
             <Route path="/review/:orderId" element={<WriteReview />} />
+            <Route path="/brands" element={<Brands />} />
+            <Route path="/brand/:slug" element={<BrandProducts />} />
           </Route>
         </Route>
 

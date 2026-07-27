@@ -58,8 +58,9 @@ export default function CategoryProducts() {
 
   const filteredProducts = useMemo(() => {
     let data = products.filter(
-      (product) => product.category.toLowerCase() === slug.toLowerCase(),
-    );
+  (product) =>
+    product.category.toLowerCase() === slug.toLowerCase()
+);
 
     // Search
 
