@@ -88,7 +88,7 @@ export default function OrderSummary({ onPlaceOrder }) {
 
       {shipping === 0 && (
         <div className="mt-6 rounded-xl bg-green-50 p-4 text-sm text-green-700">
-          🎉 Congratulations! You qualify for FREE shipping.
+           Congratulations! You qualify for FREE shipping.
         </div>
       )}
 
@@ -103,7 +103,7 @@ export default function OrderSummary({ onPlaceOrder }) {
 
       {/* Secure Checkout */}
       <p className="mt-4 text-center text-xs text-gray-500">
-        🔒 Secure checkout with encrypted payment processing.
+         Secure checkout with encrypted payment processing.
       </p>
     </div>
   );

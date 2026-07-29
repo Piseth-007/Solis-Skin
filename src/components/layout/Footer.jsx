@@ -24,7 +24,7 @@ export default function Footer() {
 
       <div className="absolute -right-40 bottom-0 h-96 w-96 rounded-full bg-pink-500/10 blur-3xl"></div>
 
-      <div className="relative">
+      <div className="relative">  
         {/* Footer */}
 
         <div className="mx-auto max-w-7xl px-6 py-20">

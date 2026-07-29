@@ -25,6 +25,8 @@ import CategoryProducts from "../pages/CategoryProducts";
 
 import Brands from "../pages/Brands";
 import BrandProducts from "../pages/BrandProducts";
+import About from "../pages/About";
+import Contact from "../pages/Contact";
 export default function AppRoutes() {
   return (
     <>
@@ -50,6 +52,8 @@ export default function AppRoutes() {
             <Route path="/brands" element={<Brands />} />
             <Route path="/brand/:slug" element={<BrandProducts />} />
           </Route>
+            <Route path="/about" element={<About/>} />
+            <Route path="/contact" element={<Contact/>} />
         </Route>
 
         <Route path="/login" element={<Login />} />

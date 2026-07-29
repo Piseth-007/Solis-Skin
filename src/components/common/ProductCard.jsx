@@ -223,7 +223,7 @@ export default function ProductCard({ product, view = "grid" }) {
                 size={16}
                 className={
                   i < product.rating
-                    ? "fill-yellow-400 text-yellow-400"
+                    ? "fill-black black"
                     : "text-gray-300"
                 }
               />

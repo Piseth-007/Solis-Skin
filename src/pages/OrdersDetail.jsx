@@ -78,7 +78,7 @@ export default function OrderDetail() {
                 onClick={() => navigate(`/review/${order.id}`)}
                 className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-700"
               >
-                ⭐ Write Review
+                 Write Review
               </button>
             )}
           </div>

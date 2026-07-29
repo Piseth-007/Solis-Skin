@@ -100,7 +100,7 @@ export default function BestSeller() {
                       size={16}
                       className={
                         star <= Math.round(product.rating)
-                          ? "fill-yellow-400 text-yellow-400"
+                          ? "fill-black text-black"
                           : "text-gray-300"
                       }
                     />

@@ -56,7 +56,7 @@ export default function Hero() {
           <div className="mt-8 flex items-center gap-5">
             <div className="flex text-yellow-400">
               {[...Array(5)].map((_, index) => (
-                <Star key={index} size={20} fill="currentColor" />
+                <Star key={index} size={20} className="fill-black text-black" />
               ))}
             </div>
 
