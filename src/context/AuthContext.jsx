@@ -4,40 +4,73 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem("token") || "");
+  const [token, setToken] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     try {
+      const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
+
+      if (storedToken) {
+        setToken(storedToken);
+      }
 
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
-      console.error("Failed to parse stored user:", error);
+      console.error("Failed to restore authentication:", error);
 
-      localStorage.removeItem("user");
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const login = (userData, accessToken) => {
-    setUser(userData);
-    setToken(accessToken);
+  /**
+   * Login
+   * authResponse comes directly from Spring Boot
+   */
+  const login = (authResponse) => {
+    const authUser = {
+      userId: authResponse.userId,
+      name: authResponse.name,
+      email: authResponse.email,
+      role: authResponse.role,
+    };
 
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", accessToken);
+    setUser(authUser);
+    setToken(authResponse.token);
+
+    localStorage.setItem("token", authResponse.token);
+    localStorage.setItem("user", JSON.stringify(authUser));
   };
 
+  /**
+   * Logout
+   */
   const logout = () => {
     setUser(null);
     setToken("");
 
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  };
+
+  /**
+   * Update profile
+   */
+  const updateUser = (data) => {
+    const updatedUser = {
+      ...user,
+      ...data,
+    };
+
+    setUser(updatedUser);
+
+    localStorage.setItem("user", JSON.stringify(updatedUser));
   };
 
   const value = useMemo(
@@ -45,9 +78,14 @@ export function AuthProvider({ children }) {
       user,
       token,
       loading,
+
       login,
       logout,
-      isAuthenticated: Boolean(token),
+      updateUser,
+
+      isAuthenticated: !!token,
+      isAdmin: user?.role === "ADMIN",
+      isUser: user?.role === "USER",
     }),
     [user, token, loading],
   );

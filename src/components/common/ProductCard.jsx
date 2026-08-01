@@ -145,11 +145,11 @@ export default function ProductCard({ product, view = "grid" }) {
     <motion.article
       whileHover={{ y: -8 }}
       transition={{ duration: 0.3 }}
-      className="group flex h-155 flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:border-rose-200 hover:shadow-xl"
+      className="group flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:border-rose-200 hover:shadow-xl"
     >
       <Link to={`/product/${product.id}`} className="flex flex-1 flex-col">
         {/* Image */}
-        <div className="relative h-72 overflow-hidden bg-gray-100">
+        <div className="relative aspect-4/4 overflow-hidden bg-gray-100">
           <img
             src={product.image}
             alt={product.name}
@@ -193,38 +193,34 @@ export default function ProductCard({ product, view = "grid" }) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              toast("👀 Quick View coming soon!");
+              toast("Quick View coming soon!");
             }}
             className="absolute bottom-5 left-1/2 flex -translate-x-1/2 translate-y-8 items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-medium shadow-lg opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100"
           >
-            <Eye size={16} />
+            <Eye size={14} />
             Quick View
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 flex-col p-6">
+        <div className="flex flex-1 flex-col p-4">
           <p className="text-sm font-semibold uppercase tracking-wider text-rose-500">
             {product.brand}
           </p>
 
-          <h3 className="mt-2 min-h-14 line-clamp-2 text-lg font-bold text-gray-900">
+          <h3 className="mt-2 line-clamp-2 text-base font-semibold text-gray-900">
             {product.name}
           </h3>
 
-          <p className="mt-1 text-sm text-gray-400">{product.category}</p>
+          <p className="mt text-sm text-gray-400">{product.category}</p>
 
-          <p className="mt-1 text-sm text-gray-500">{product.skinType} Skin</p>
-
-          <div className="mt-4 flex items-center">
+          <div className="mt-3 flex items-center">
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                size={16}
+                size={14}
                 className={
-                  i < product.rating
-                    ? "fill-black black"
-                    : "text-gray-300"
+                  i < product.rating ? "fill-black text-black" : "text-gray-300"
                 }
               />
             ))}
@@ -235,10 +231,10 @@ export default function ProductCard({ product, view = "grid" }) {
           </div>
 
           <div className="mt-5 flex items-center gap-3">
-            <span className="text-2xl font-bold">${product.price}</span>
+            <span className="text-xl font-bold">${product.price}</span>
 
             {product.oldPrice && (
-              <span className="text-lg text-gray-400 line-through">
+              <span className="text-sm text-gray-400 line-through">
                 ${product.oldPrice}
               </span>
             )}

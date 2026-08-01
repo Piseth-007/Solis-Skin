@@ -1,9 +1,8 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-export default function ProtectedRoute() {
-  const { loading, isAuthenticated } = useAuth();
-  const location = useLocation();
+export default function AdminRoute() {
+  const { loading, isAuthenticated, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -13,9 +12,16 @@ export default function ProtectedRoute() {
     );
   }
 
+  // Not logged in
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/login" replace />;
   }
 
+  // Logged in but not an admin
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Admin user
   return <Outlet />;
 }

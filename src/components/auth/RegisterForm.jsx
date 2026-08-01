@@ -1,10 +1,19 @@
 import { useState } from "react";
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+import { register } from "../../api/authApi";
+import { useAuth } from "../../context/AuthContext";
 
 export default function RegisterForm() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     fullName: "",
@@ -15,8 +24,8 @@ export default function RegisterForm() {
     agree: false,
   });
 
-  const handleChange = (e) => {
-    const { name, value, checked, type } = e.target;
+  const handleChange = ({ target }) => {
+    const { name, value, checked, type } = target;
 
     setForm((prev) => ({
       ...prev,
@@ -24,21 +33,55 @@ export default function RegisterForm() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match.");
+    setError("");
+
+    if (!form.agree) {
+      setError("Please accept the Terms & Conditions.");
       return;
     }
 
-    console.log(form);
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
 
-    // Backend registration will be added later
+    setLoading(true);
+
+    try {
+      const auth = await register({
+        name: form.fullName,
+        email: form.email,
+        password: form.password,
+        // phone: form.phone // Uncomment if backend supports phone
+      });
+
+      login(auth);
+
+      if (auth.role === "ADMIN") {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message || err.message || "Registration failed.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
       {/* Full Name */}
       <div>
         <label className="mb-2 block font-medium">Full Name</label>
@@ -76,8 +119,8 @@ export default function RegisterForm() {
             name="email"
             value={form.email}
             onChange={handleChange}
-            required
             placeholder="john@email.com"
+            required
             className="w-full rounded-xl border py-3 pl-12 pr-4 outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
           />
         </div>
@@ -99,7 +142,6 @@ export default function RegisterForm() {
             value={form.phone}
             onChange={handleChange}
             placeholder="+855 12 345 678"
-            required
             className="w-full rounded-xl border py-3 pl-12 pr-4 outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
           />
         </div>
@@ -126,7 +168,7 @@ export default function RegisterForm() {
 
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)}
+            onClick={() => setShowPassword((prev) => !prev)}
             className="absolute right-4 top-1/2 -translate-y-1/2"
           >
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -155,7 +197,7 @@ export default function RegisterForm() {
 
           <button
             type="button"
-            onClick={() => setShowConfirm(!showConfirm)}
+            onClick={() => setShowConfirm((prev) => !prev)}
             className="absolute right-4 top-1/2 -translate-y-1/2"
           >
             {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -170,20 +212,26 @@ export default function RegisterForm() {
           name="agree"
           checked={form.agree}
           onChange={handleChange}
-          required
           className="mt-1"
         />
 
         <span>I agree to the Terms & Conditions and Privacy Policy.</span>
       </label>
 
-      {/* Register */}
+      {/* Register Button */}
       <button
         type="submit"
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-semibold text-white transition hover:bg-rose-700"
+        disabled={loading}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Create Account
-        <ArrowRight size={18} />
+        {loading ? (
+          "Creating Account..."
+        ) : (
+          <>
+            Create Account
+            <ArrowRight size={18} />
+          </>
+        )}
       </button>
 
       {/* Login */}

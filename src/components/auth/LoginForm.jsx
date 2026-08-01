@@ -1,156 +1,117 @@
 import { useState } from "react";
-import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+import { login as loginApi } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
 
 export default function LoginForm() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const { login } = useAuth();
 
-  const [showPassword, setShowPassword] = useState(false);
+  const from = location.state?.from?.pathname || "/";
 
   const [form, setForm] = useState({
     email: "",
     password: "",
-    remember: false,
   });
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = ({ target }) => {
+    const { name, value } = target;
 
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Demo login
-    login(
-      {
-        id: 1,
-        name: "John Doe",
-        email: form.email,
-      },
-      "demo-jwt-token",
-    );
+    setLoading(true);
+    setError("");
 
-    navigate("/");
+    try {
+      const auth = await loginApi(form.email, form.password);
+
+      login(auth);
+
+      if (auth.role === "ADMIN") {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid email or password.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Email */}
-      <div>
-        <label className="mb-2 block font-medium text-gray-700">
-          Email Address
-        </label>
-
-        <div className="relative">
-          <Mail
-            size={20}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="Enter your email"
-            className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
-            required
-          />
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {error && (
+        <div className="rounded-lg bg-red-100 p-3 text-sm text-red-600">
+          {error}
         </div>
+      )}
+
+      <div>
+        <label className="mb-2 block text-sm font-medium">Email</label>
+
+        <input
+          type="email"
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full rounded-lg border px-4 py-3 focus:border-rose-500 focus:outline-none"
+          placeholder="Enter your email"
+          required
+        />
       </div>
 
-      {/* Password */}
       <div>
-        <label className="mb-2 block font-medium text-gray-700">Password</label>
+        <label className="mb-2 block text-sm font-medium">Password</label>
 
-        <div className="relative">
-          <Lock
-            size={20}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            placeholder="Enter your password"
-            className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-12 outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
-            required
-          />
-
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-          >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-          </button>
-        </div>
+        <input
+          type="password"
+          name="password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full rounded-lg border px-4 py-3 focus:border-rose-500 focus:outline-none"
+          placeholder="Enter your password"
+          required
+        />
       </div>
 
-      {/* Remember + Forgot */}
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-sm text-gray-600">
-          <input
-            type="checkbox"
-            name="remember"
-            checked={form.remember}
-            onChange={handleChange}
-            className="rounded"
-          />
-          Remember Me
-        </label>
-
+      <div className="flex justify-end">
         <Link
           to="/forgot-password"
-          className="text-sm font-medium text-rose-600 hover:underline"
+          className="text-sm text-rose-500 hover:underline"
         >
           Forgot Password?
         </Link>
       </div>
 
-      {/* Login Button */}
       <button
         type="submit"
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-semibold text-white transition hover:bg-rose-700"
+        disabled={loading}
+        className="w-full rounded-lg bg-rose-500 py-3 font-semibold text-white transition hover:bg-rose-600 disabled:opacity-50"
       >
-        Sign In
-        <ArrowRight size={18} />
+        {loading ? "Signing In..." : "Sign In"}
       </button>
 
-      {/* Divider */}
-      <div className="relative text-center">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t"></div>
-        </div>
-
-        <span className="relative bg-white px-4 text-sm text-gray-500">OR</span>
-      </div>
-
-      {/* Google Button */}
-      <button
-        type="button"
-        className="w-full rounded-xl border border-gray-300 py-3 font-medium transition hover:bg-gray-50"
-      >
-        Continue with Google
-      </button>
-
-      {/* Register Link */}
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm">
         Don't have an account?{" "}
         <Link
           to="/register"
-          className="font-semibold text-rose-600 hover:underline"
+          className="font-semibold text-rose-500 hover:underline"
         >
-          Create Account
+          Register
         </Link>
       </p>
     </form>
