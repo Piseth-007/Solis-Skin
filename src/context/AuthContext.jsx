@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
   const login = (authResponse) => {
     const authUser = {
       userId: authResponse.userId,
-      name: authResponse.name,
+      fullName: authResponse.fullName,
       email: authResponse.email,
       role: authResponse.role,
     };

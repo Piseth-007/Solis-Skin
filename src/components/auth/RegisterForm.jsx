@@ -52,10 +52,10 @@ export default function RegisterForm() {
 
     try {
       const auth = await register({
-        name: form.fullName,
+        fullName: form.fullName,
         email: form.email,
+        phone: form.phone,
         password: form.password,
-        // phone: form.phone // Uncomment if backend supports phone
       });
 
       login(auth);

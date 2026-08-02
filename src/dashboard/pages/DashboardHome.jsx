@@ -1,33 +1,66 @@
+import { useEffect, useState } from "react";
+
 import { Package, ShoppingCart, Users, Layers } from "lucide-react";
 
-const stats = [
+import { getDashboardStats } from "../../api/dashboardApi";
+
+const cardConfig = [
   {
+    key: "products",
     title: "Products",
-    value: 128,
     icon: Package,
     color: "bg-blue-500",
   },
   {
+    key: "categories",
     title: "Categories",
-    value: 12,
     icon: Layers,
     color: "bg-green-500",
   },
   {
+    key: "orders",
     title: "Orders",
-    value: 356,
     icon: ShoppingCart,
     color: "bg-amber-500",
   },
   {
+    key: "customers",
     title: "Customers",
-    value: 248,
     icon: Users,
     color: "bg-rose-500",
   },
 ];
 
 export default function DashboardHome() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  async function loadDashboard() {
+    try {
+      setLoading(true);
+
+      const data = await getDashboardStats();
+
+      setStats(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-80 items-center justify-center">
+        Loading dashboard...
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -39,21 +72,21 @@ export default function DashboardHome() {
         </p>
       </div>
 
-      {/* Stats */}
+      {/* Statistics */}
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((item) => {
+        {cardConfig.map((item) => {
           const Icon = item.icon;
 
           return (
             <div
-              key={item.title}
+              key={item.key}
               className="rounded-2xl bg-white p-6 shadow-sm transition hover:shadow-md"
             >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">{item.title}</p>
 
-                  <h2 className="mt-2 text-3xl font-bold">{item.value}</h2>
+                  <h2 className="mt-2 text-3xl font-bold">{stats[item.key]}</h2>
                 </div>
 
                 <div className={`${item.color} rounded-xl p-4 text-white`}>
@@ -65,7 +98,7 @@ export default function DashboardHome() {
         })}
       </div>
 
-      {/* Placeholder Grid */}
+      {/* Sales */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl bg-white p-6 shadow-sm lg:col-span-2">
           <h2 className="mb-4 text-lg font-semibold">Sales Overview</h2>
@@ -75,15 +108,24 @@ export default function DashboardHome() {
           </div>
         </div>
 
+        {/* Recent Orders */}
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold">Recent Orders</h2>
 
-          <div className="space-y-4">
-            <div className="rounded-lg bg-gray-50 p-3">Order #1001</div>
+          <div className="space-y-3">
+            {stats.recentOrders.length === 0 ? (
+              <div className="text-sm text-gray-500">No orders found.</div>
+            ) : (
+              stats.recentOrders.map((order) => (
+                <div key={order.id} className="rounded-lg bg-gray-50 p-3">
+                  <div className="font-medium">Order #{order.id}</div>
 
-            <div className="rounded-lg bg-gray-50 p-3">Order #1002</div>
-
-            <div className="rounded-lg bg-gray-50 p-3">Order #1003</div>
+                  <div className="text-sm text-gray-500">
+                    {order.customer?.fullName || "Unknown Customer"}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

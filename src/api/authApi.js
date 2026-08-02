@@ -55,7 +55,7 @@ export const saveAuth = (auth) => {
     "user",
     JSON.stringify({
       userId: auth.userId,
-      name: auth.name,
+      fullName: auth.fullName,
       email: auth.email,
       role: auth.role,
     }),
