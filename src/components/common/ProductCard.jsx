@@ -151,7 +151,7 @@ export default function ProductCard({ product, view = "grid" }) {
         {/* Image */}
         <div className="relative aspect-4/4 overflow-hidden bg-gray-100">
           <img
-            src={product.image}
+            src={product.imageUrl}
             alt={product.name}
             className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
           />

@@ -7,8 +7,10 @@ import {
   Users,
   Settings,
   LogOut,
+  UserCircle2,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { getCurrentUser, logout } from "../../api/authApi";
 
 const menus = [
   {
@@ -49,6 +51,14 @@ const menus = [
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+  const user = getCurrentUser();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <aside className="hidden w-72 border-r border-gray-200 bg-white lg:flex lg:flex-col">
       {/* Logo */}
@@ -56,13 +66,12 @@ export default function Sidebar() {
         <h1 className="text-2xl font-bold tracking-wide text-rose-600">
           Solis Skin
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Admin Dashboard
-        </p>
+
+        <p className="mt-1 text-sm text-gray-500">Admin Dashboard</p>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-2 p-4">
+      <nav className="flex-1 space-y-2 overflow-y-auto p-4">
         {menus.map((menu) => {
           const Icon = menu.icon;
 
@@ -86,9 +95,12 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
+      {/* User + Logout */}
       <div className="border-t border-gray-200 p-4">
-        <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-gray-700 transition hover:bg-red-50 hover:text-red-600">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-gray-700 transition hover:bg-red-50 hover:text-red-600"
+        >
           <LogOut size={20} />
           Logout
         </button>

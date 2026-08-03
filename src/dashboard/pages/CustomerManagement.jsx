@@ -5,49 +5,36 @@ import CustomerStats from "../components/customers/CustomerStats";
 import CustomerToolbar from "../components/customers/CustomerToolbar";
 import CustomerTable from "../components/customers/CustomerTable";
 import Modal from "../components/common/Modal";
+import DeleteConfirmModal from "../components/common/DeleteConfirmModal";
 import CustomerForm from "../components/customers/CustomerForm";
 
-import { getCustomers, deleteCustomer } from "../../api/customerApi";
+import {
+  getCustomers,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
+} from "../../api/customerApi";
 
 export default function CustomerManagement() {
   const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
-  const [saving, setSaving] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
   const [openModal, setOpenModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   useEffect(() => {
     loadCustomers();
   }, []);
-  const handleAdd = () => {
-    setSelectedCustomer(null);
-    setOpenModal(true);
-  };
-  const handleEdit = (customer) => {
-    setSelectedCustomer(customer);
-    setOpenModal(true);
-  };
-  const handleSave = async (data) => {
-    try {
-      setSaving(true);
 
-      if (selectedCustomer) {
-        // await updateCustomer(selectedCustomer.id, data);
-      } else {
-        // await createCustomer(data);
-      }
-
-      setOpenModal(false);
-      loadCustomers();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSaving(false);
-    }
-  };
   const loadCustomers = async () => {
     try {
       setLoading(true);
@@ -56,7 +43,7 @@ export default function CustomerManagement() {
 
       setCustomers(data);
     } catch (error) {
-      console.error(error);
+      console.error("Load Customers Error:", error);
     } finally {
       setLoading(false);
     }
@@ -64,9 +51,12 @@ export default function CustomerManagement() {
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((customer) => {
+      const keyword = search.toLowerCase();
+
       const matchSearch =
-        customer.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-        customer.email?.toLowerCase().includes(search.toLowerCase());
+        customer.fullName?.toLowerCase().includes(keyword) ||
+        customer.email?.toLowerCase().includes(keyword) ||
+        customer.phone?.toLowerCase().includes(keyword);
 
       const matchStatus =
         status === "all"
@@ -79,19 +69,65 @@ export default function CustomerManagement() {
     });
   }, [customers, search, status]);
 
-  const handleView = (customer) => {
-    setSelectedCustomer(customer);
+  const handleAdd = () => {
+    setEditingCustomer(null);
     setOpenModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this customer?")) return;
+  const handleEdit = (customer) => {
+    setEditingCustomer(customer);
+    setOpenModal(true);
+  };
 
+  const handleView = (customer) => {
+    setEditingCustomer(customer);
+    setOpenModal(true);
+  };
+
+  const handleSave = async (form) => {
     try {
-      await deleteCustomer(id);
-      loadCustomers();
+      setSaving(true);
+
+      if (editingCustomer) {
+        await updateCustomer(editingCustomer.id, form);
+      } else {
+        await createCustomer(form);
+      }
+
+      setOpenModal(false);
+      setEditingCustomer(null);
+
+      await loadCustomers();
     } catch (error) {
-      console.error(error);
+      console.error("Save Customer Error:", error);
+      console.log("Status:", error.response?.status);
+      console.log("Data:", error.response?.data);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteClick = (customer) => {
+    setSelectedCustomer(customer);
+    setDeleteOpen(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      if (!selectedCustomer) return;
+
+      setDeleting(true);
+
+      await deleteCustomer(selectedCustomer.id);
+
+      setDeleteOpen(false);
+      setSelectedCustomer(null);
+
+      await loadCustomers();
+    } catch (error) {
+      console.error("Delete Customer Error:", error);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -109,26 +145,53 @@ export default function CustomerManagement() {
         onAddCustomer={handleAdd}
       />
 
-      <CustomerTable
-        loading={loading}
-        customers={filteredCustomers}
-        onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+      {loading ? (
+        <div className="rounded-xl bg-white p-10 text-center shadow">
+          Loading customers...
+        </div>
+      ) : (
+        <CustomerTable
+          customers={filteredCustomers}
+          onView={handleView}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+        />
+      )}
 
+      {/* Add / Edit */}
       <Modal
         open={openModal}
-        title={selectedCustomer ? "Edit Customer" : "Add Customer"}
-        onClose={() => setOpenModal(false)}
+        title={editingCustomer ? "Edit Customer" : "Add Customer"}
+        onClose={() => {
+          if (saving) return;
+
+          setOpenModal(false);
+          setEditingCustomer(null);
+        }}
       >
         <CustomerForm
-          customer={selectedCustomer}
+          customer={editingCustomer}
           loading={saving}
-          onCancel={() => setOpenModal(false)}
+          onCancel={() => {
+            setOpenModal(false);
+            setEditingCustomer(null);
+          }}
           onSubmit={handleSave}
         />
       </Modal>
+
+      {/* Delete */}
+      <DeleteConfirmModal
+        open={deleteOpen}
+        title="Delete Customer"
+        message={`Are you sure you want to delete "${selectedCustomer?.fullName}"?`}
+        loading={deleting}
+        onCancel={() => {
+          setDeleteOpen(false);
+          setSelectedCustomer(null);
+        }}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

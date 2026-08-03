@@ -17,6 +17,7 @@ export default function BrandManagement() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [search, setSearch] = useState("");
 
@@ -26,32 +27,36 @@ export default function BrandManagement() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState(null);
 
+  useEffect(() => {
+    loadBrands();
+  }, []);
+
   const loadBrands = async () => {
     try {
       setLoading(true);
 
       const data = await getBrands();
 
-      const brands = data.map((brand) => ({
+      const mappedBrands = data.map((brand) => ({
         ...brand,
-        logoUrl: brand.logoUrl ? `http://localhost:8080${brand.logoUrl}` : "",
+        logoUrl: brand.logoUrl
+          ? brand.logoUrl.startsWith("http")
+            ? brand.logoUrl
+            : `http://localhost:8080${brand.logoUrl}`
+          : "",
       }));
 
-      setBrands(brands);
+      setBrands(mappedBrands);
     } catch (error) {
-      console.error(error);
+      console.error("Load Brands Error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadBrands();
-  }, []);
-
   const filteredBrands = useMemo(() => {
     return brands.filter((brand) =>
-      brand.name.toLowerCase().includes(search.toLowerCase()),
+      brand.name.toLowerCase().includes(search.toLowerCase())
     );
   }, [brands, search]);
 
@@ -91,7 +96,9 @@ export default function BrandManagement() {
 
       await loadBrands();
     } catch (error) {
-      console.error(error);
+      console.error("Save Brand Error:", error);
+      console.log("Status:", error.response?.status);
+      console.log("Data:", error.response?.data);
     } finally {
       setSaving(false);
     }
@@ -106,6 +113,8 @@ export default function BrandManagement() {
     try {
       if (!selectedBrand) return;
 
+      setDeleting(true);
+
       await deleteBrand(selectedBrand.id);
 
       setDeleteOpen(false);
@@ -113,7 +122,9 @@ export default function BrandManagement() {
 
       await loadBrands();
     } catch (error) {
-      console.error(error);
+      console.error("Delete Brand Error:", error);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -121,17 +132,19 @@ export default function BrandManagement() {
 
   const totalProducts = brands.reduce(
     (sum, brand) => sum + (brand.productCount ?? brand.products?.length ?? 0),
-    0,
+    0
   );
 
   return (
     <div className="space-y-6">
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Brand Management</h1>
-
-          <p className="text-gray-500">Manage your product brands</p>
+          <p className="text-gray-500">
+            Manage your product brands
+          </p>
         </div>
 
         <button
@@ -145,43 +158,58 @@ export default function BrandManagement() {
 
       {/* Statistics */}
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="rounded-xl  bg-white p-6 shadow">
+
+        <div className="rounded-xl bg-white p-6 shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total Brands</p>
+              <p className="text-sm text-gray-500">
+                Total Brands
+              </p>
 
-              <h2 className="mt-2 text-3xl font-bold">{totalBrands}</h2>
+              <h2 className="mt-2 text-3xl font-bold">
+                {totalBrands}
+              </h2>
             </div>
 
             <Tag size={36} className="text-pink-500" />
           </div>
         </div>
 
-        <div className="rounded-xl  bg-white p-6 shadow">
+        <div className="rounded-xl bg-white p-6 shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total Products</p>
+              <p className="text-sm text-gray-500">
+                Total Products
+              </p>
 
-              <h2 className="mt-2 text-3xl font-bold">{totalProducts}</h2>
+              <h2 className="mt-2 text-3xl font-bold">
+                {totalProducts}
+              </h2>
             </div>
 
             <Package size={36} className="text-blue-500" />
           </div>
         </div>
+
       </div>
 
       {/* Search */}
-      <div className="rounded-xl  bg-white p-5 shadow">
+      <div className="rounded-xl bg-white p-5 shadow">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+
+          <Search
+            className="absolute left-3 top-3 text-gray-400"
+            size={18}
+          />
 
           <input
             type="text"
             placeholder="Search brand..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg shadow py-3 pl-10 pr-4 outline-none focus:border-pink-500"
+            className="w-full rounded-lg border py-3 pl-10 pr-4 outline-none focus:border-pink-500"
           />
+
         </div>
       </div>
 
@@ -198,7 +226,7 @@ export default function BrandManagement() {
         />
       )}
 
-      {/* Add/Edit Modal */}
+      {/* Modal */}
       <BrandModal
         open={openModal}
         onClose={() => {
@@ -210,12 +238,12 @@ export default function BrandManagement() {
         loading={saving}
       />
 
-      {/* Delete Confirmation */}
+      {/* Delete Modal */}
       <DeleteConfirmModal
         open={deleteOpen}
         title="Delete Brand"
         message={`Are you sure you want to delete "${selectedBrand?.name}"?`}
-        loading={saving}
+        loading={deleting}
         onCancel={() => {
           setDeleteOpen(false);
           setSelectedBrand(null);

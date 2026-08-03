@@ -24,31 +24,44 @@ export default function ProductTabs({ product }) {
       </div>
 
       <div className="mt-8 text-gray-600">
-        {tab === "description" && <p>{product.description}</p>}
+        {/* Description */}
+        {tab === "description" && <p>{product.description || ""}</p>}
 
-        {tab === "ingredients" && (
-          <ul className="list-disc space-y-2 pl-6">
-            {product.ingredients.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        )}
+        {/* Ingredients */}
+        {tab === "ingredients" &&
+          (product.ingredients?.length ? (
+            <ul className="list-disc space-y-2 pl-6">
+              {product.ingredients.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p></p>
+          ))}
 
-        {tab === "benefits" && (
-          <ul className="list-disc space-y-2 pl-6">
-            {product.benefits.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        )}
+        {/* Benefits */}
+        {tab === "benefits" &&
+          (product.benefits?.length ? (
+            <ul className="list-disc space-y-2 pl-6">
+              {product.benefits.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p></p>
+          ))}
 
-        {tab === "howToUse" && (
-          <ol className="list-decimal space-y-2 pl-6">
-            {product.howToUse.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ol>
-        )}
+        {/* How To Use */}
+        {tab === "howToUse" &&
+          (product.howToUse?.length ? (
+            <ol className="list-decimal space-y-2 pl-6">
+              {product.howToUse.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ol>
+          ) : (
+            <p></p>
+          ))}
       </div>
     </section>
   );

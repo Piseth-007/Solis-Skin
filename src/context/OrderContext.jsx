@@ -1,42 +1,95 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import {
+  getOrders,
+  getOrderById,
+  createOrder,
+  updateOrderStatus as updateStatusApi,
+} from "../api/orderApi";
 
 const OrderContext = createContext();
 
 export function OrderProvider({ children }) {
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem("solis-orders");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ============================
+  // Load Orders
+  // ============================
+  const loadOrders = async () => {
+    try {
+      const data = await getOrders();
+      setOrders(data);
+    } catch (error) {
+      console.error("Failed to load orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    localStorage.setItem("solis-orders", JSON.stringify(orders));
-  }, [orders]);
+    loadOrders();
+  }, []);
 
-  const placeOrder = (order) => {
-    setOrders((prev) => [order, ...prev]);
+  // ============================
+  // Create Order
+  // ============================
+  const placeOrder = async (orderRequest) => {
+    try {
+      const newOrder = await createOrder(orderRequest);
+
+      setOrders((prev) => [newOrder, ...prev]);
+
+      return newOrder;
+    } catch (error) {
+      console.error("Failed to create order:", error);
+      throw error;
+    }
   };
 
-  const getOrder = (id) => {
-    return orders.find((order) => order.id === id);
+  // ============================
+  // Get Order By ID
+  // ============================
+  const getOrder = async (id) => {
+    try {
+      return await getOrderById(id);
+    } catch (error) {
+      console.error("Failed to get order:", error);
+      return null;
+    }
   };
 
-  const updateOrderStatus = (id, status) => {
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === id
-          ? {
-              ...order,
-              status,
-            }
-          : order,
-      ),
-    );
+  // ============================
+  // Update Status
+  // ============================
+  const updateOrderStatus = async (id, status) => {
+    try {
+      const updated = await updateStatusApi(id, status);
+
+      setOrders((prev) =>
+        prev.map((order) => (order.id === id ? updated : order)),
+      );
+
+      return updated;
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+      throw error;
+    }
+  };
+
+  // ============================
+  // Refresh Orders
+  // ============================
+  const refreshOrders = () => {
+    loadOrders();
   };
 
   return (
     <OrderContext.Provider
       value={{
         orders,
+        loading,
+        loadOrders,
+        refreshOrders,
         placeOrder,
         getOrder,
         updateOrderStatus,

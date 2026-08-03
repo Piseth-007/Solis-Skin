@@ -1,3 +1,4 @@
+import { Users, Loader2 } from "lucide-react";
 import CustomerRow from "./CustomerRow";
 
 export default function CustomerTable({
@@ -7,40 +8,11 @@ export default function CustomerTable({
   onEdit,
   onDelete,
 }) {
-  if (loading) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-12 shadow-sm">
-        <div className="flex flex-col items-center justify-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-pink-500 border-t-transparent"></div>
-
-          <p className="text-sm text-slate-500">Loading customers...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (customers.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-16 text-center shadow-sm">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-pink-100">
-          <span className="text-2xl">👤</span>
-        </div>
-
-        <h3 className="text-lg font-semibold text-slate-800">
-          No Customers Found
-        </h3>
-
-        <p className="mt-2 text-sm text-slate-500">
-          Try changing your search or add a new customer.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
+      <div className="max-w-full overflow-x-auto">
         <table className="min-w-full">
+          {/* Header */}
           <thead className="bg-slate-50">
             <tr>
               <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">
@@ -70,15 +42,53 @@ export default function CustomerTable({
           </thead>
 
           <tbody className="divide-y divide-slate-100">
-            {customers.map((customer) => (
-              <CustomerRow
-                key={customer.id}
-                customer={customer}
-                onView={onView}
-                onEdit={onEdit}
-                onDelete={onDelete}
-              />
-            ))}
+            {/* Loading */}
+            {loading && (
+              <tr>
+                <td colSpan={6} className="py-16">
+                  <div className="flex flex-col items-center justify-center gap-4">
+                    <Loader2 className="h-10 w-10 animate-spin text-pink-500" />
+
+                    <p className="text-sm text-slate-500">
+                      Loading customers...
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            )}
+
+            {/* Empty */}
+            {!loading && customers.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-16">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-pink-100">
+                      <Users className="h-8 w-8 text-pink-600" />
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-slate-800">
+                      No Customers Found
+                    </h3>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                      No customers match your current search or filter.
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            )}
+
+            {/* Data */}
+            {!loading &&
+              customers.map((customer) => (
+                <CustomerRow
+                  key={customer.id}
+                  customer={customer}
+                  onView={onView}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
+              ))}
           </tbody>
         </table>
       </div>

@@ -1,6 +1,9 @@
 import { Bell, Search, UserCircle2, ChevronDown, Menu } from "lucide-react";
+import { getCurrentUser } from "../../api/authApi";
 
 export default function Header() {
+  const user = getCurrentUser();
+
   return (
     <header className="sticky top-0 z-30 flex h-18 items-center justify-between border-b border-gray-200 bg-white px-6">
       {/* Left */}
@@ -39,9 +42,13 @@ export default function Header() {
           <UserCircle2 size={38} className="text-gray-500" />
 
           <div className="hidden text-left md:block">
-            <p className="font-semibold text-gray-800">Admin</p>
+            <p className="font-semibold text-gray-800">
+              {user?.fullName || "Guest"}
+            </p>
 
-            <p className="text-sm text-gray-500">administrator</p>
+            <p className="text-sm capitalize text-gray-500">
+              {user?.role?.toLowerCase() || "Administrator"}
+            </p>
           </div>
 
           <ChevronDown size={18} className="hidden text-gray-500 md:block" />

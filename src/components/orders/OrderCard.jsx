@@ -12,7 +12,7 @@ export default function OrderCard({ order }) {
           <div className="flex items-center gap-3">
             <Package className="text-rose-500" />
 
-            <h2 className="text-xl font-bold">Order #{order.id}</h2>
+            <h2 className="text-xl font-bold">Order #{order.orderNumber}</h2>
 
             <OrderStatusBadge status={order.status} />
           </div>
@@ -20,15 +20,22 @@ export default function OrderCard({ order }) {
           <div className="mt-4 flex flex-wrap gap-6 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <Calendar size={16} />
-              {order.date}
+              {new Date(order.createdAt).toLocaleDateString()}
             </div>
 
             <span>
-              {order.items.length} Item
-              {order.items.length > 1 ? "s" : ""}
+              {order.items?.length || 0} Item
+              {(order.items?.length || 0) !== 1 ? "s" : ""}
             </span>
 
-            <span className="font-semibold text-gray-900">${order.total}</span>
+            <span className="font-semibold text-gray-900">
+              ${Number(order.totalAmount).toFixed(2)}
+            </span>
+          </div>
+
+          <div className="mt-2 text-sm text-gray-500">
+            Payment: <strong>{order.paymentMethod}</strong> •{" "}
+            <strong>{order.paymentStatus}</strong>
           </div>
         </div>
 

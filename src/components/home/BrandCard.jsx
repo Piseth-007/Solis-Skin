@@ -1,38 +1,43 @@
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function BrandCard({ brand }) {
   return (
     <motion.div
-      whileHover={{
-        y: -10,
-        scale: 1.04,
-      }}
-      transition={{
-        duration: 0.25,
-      }}
+      whileHover={{ y: -10 }}
+      transition={{ duration: 0.25 }}
+      className="w-full sm:w-70 lg:w-55"
     >
       <Link
         to={`/brand/${brand.slug}`}
-        className="group flex h-52 flex-col items-center justify-center rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition hover:shadow-2xl"
+        className="group flex h-full flex-col rounded-3xl bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
       >
-        <div className="flex h-20 items-center justify-center">
-          <img
-            src={brand.logo}
-            alt={brand.name}
-            className="max-h-14 object-contain grayscale transition duration-500 group-hover:scale-110 group-hover:grayscale-0"
-          />
+        {/* Icon */}
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-rose-100 via-pink-100 to-rose-200 transition group-hover:scale-110">
+          <Sparkles className="h-9 w-9 text-rose-600" />
         </div>
 
-        <h3 className="mt-6 text-center text-lg font-bold text-gray-900">
+        {/* Brand Name */}
+        <h3 className="mt-8 text-center text-2xl font-bold text-gray-900 transition group-hover:text-rose-600">
           {brand.name}
         </h3>
 
-        <span className="mt-3 flex items-center gap-2 text-sm font-medium text-rose-600 opacity-0 transition duration-300 group-hover:opacity-100">
-          Explore
-          <ArrowRight size={16} />
-        </span>
+        {/* Description */}
+        <p className="mt-3 line-clamp-3 text-center text-sm leading-6 text-gray-500">
+          Discover premium skincare products from {brand.name} and elevate your
+          daily beauty routine.
+        </p>
+
+        {/* Footer */}
+        <div className="mt-auto flex items-center justify-center gap-2 pt-8 text-rose-600">
+          <span className="text-sm font-semibold">Explore Brand</span>
+
+          <ArrowRight
+            size={18}
+            className="transition-transform duration-300 group-hover:translate-x-1"
+          />
+        </div>
       </Link>
     </motion.div>
   );

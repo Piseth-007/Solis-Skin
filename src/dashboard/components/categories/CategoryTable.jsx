@@ -1,6 +1,11 @@
 import { FolderOpen, Pencil, Trash2, Package } from "lucide-react";
 
-export default function CategoryTable({ categories = [], onEdit, onDelete }) {
+export default function CategoryTable({
+  categories = [],
+  onEdit,
+  onDelete,
+  products = [],
+}) {
   if (categories.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center shadow-sm">
@@ -89,7 +94,11 @@ export default function CategoryTable({ categories = [], onEdit, onDelete }) {
                   <span className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
                     <Package size={14} />
 
-                    {category.productCount ?? category.products?.length ?? 0}
+                    {
+                      products.filter(
+                        (product) => product.categoryId === category.id,
+                      ).length
+                    }
                   </span>
                 </td>
 

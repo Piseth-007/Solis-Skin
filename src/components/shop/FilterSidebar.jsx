@@ -1,50 +1,74 @@
+import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
+
+import { getCategories } from "../../api/categoryApi";
+import { getBrands } from "../../api/brandApi";
 
 export default function FilterSidebar({
   category,
   setCategory,
   brand,
   setBrand,
-  skinType,
-  setSkinType,
   maxPrice,
   setMaxPrice,
-  rating,
-  setRating,
   resetFilters,
 }) {
-  const categories = ["Cleanser", "Toner", "Serum", "Moisturizer", "Sunscreen"];
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
 
-  const brands = [
-    "CeraVe",
-    "COSRX",
-    "Anua",
-    "Beauty of Joseon",
-    "The Ordinary",
-  ];
+  useEffect(() => {
+    fetchCategories();
+    fetchBrands();
+  }, []);
 
-  const skinTypes = ["Dry", "Oily", "Combination", "Sensitive"];
+  const fetchCategories = async () => {
+    try {
+      const data = await getCategories();
 
-  const toggleCategory = (item) => {
-    if (category.includes(item)) {
-      setCategory(category.filter((c) => c !== item));
-    } else {
-      setCategory([...category, item]);
+      // Support both paginated and normal array responses
+      if (Array.isArray(data)) {
+        setCategories(data);
+      } else {
+        setCategories(data.content || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
     }
   };
 
-  const toggleBrand = (item) => {
-    if (brand.includes(item)) {
-      setBrand(brand.filter((b) => b !== item));
+  const fetchBrands = async () => {
+    try {
+      const data = await getBrands();
+
+      if (Array.isArray(data)) {
+        setBrands(data);
+      } else {
+        setBrands(data.content || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch brands:", error);
+    }
+  };
+
+  const toggleCategory = (name) => {
+    if (category.includes(name)) {
+      setCategory(category.filter((item) => item !== name));
     } else {
-      setBrand([...brand, item]);
+      setCategory([...category, name]);
+    }
+  };
+
+  const toggleBrand = (name) => {
+    if (brand.includes(name)) {
+      setBrand(brand.filter((item) => item !== name));
+    } else {
+      setBrand([...brand, name]);
     }
   };
 
   return (
     <aside className="sticky top-28 h-fit rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
       {/* Header */}
-
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Filters</h2>
 
@@ -58,82 +82,67 @@ export default function FilterSidebar({
       </div>
 
       {/* Category */}
-
       <div className="mt-8">
         <h3 className="mb-4 font-semibold">Category</h3>
 
         <div className="space-y-3">
-          {categories.map((item) => (
-            <label
-              key={item}
-              className="flex cursor-pointer items-center gap-3"
-            >
-              <input
-                type="checkbox"
-                checked={category.includes(item)}
-                onChange={() => toggleCategory(item)}
-                className="h-4 w-4 rounded accent-rose-500"
-              />
+          {categories.length === 0 ? (
+            <p className="text-sm text-gray-500">No categories</p>
+          ) : (
+            categories.map((item) => (
+              <label
+                key={item.id}
+                className="flex cursor-pointer items-center gap-3"
+              >
+                <input
+                  type="checkbox"
+                  checked={category.includes(item.name)}
+                  onChange={() => toggleCategory(item.name)}
+                  className="h-4 w-4 rounded accent-rose-500"
+                />
 
-              <span>{item}</span>
-            </label>
-          ))}
+                <span>{item.name}</span>
+              </label>
+            ))
+          )}
         </div>
       </div>
 
       {/* Brand */}
-
       <div className="mt-10">
         <h3 className="mb-4 font-semibold">Brand</h3>
 
         <div className="space-y-3">
-          {brands.map((item) => (
-            <label
-              key={item}
-              className="flex cursor-pointer items-center gap-3"
-            >
-              <input
-                type="checkbox"
-                checked={brand.includes(item)}
-                onChange={() => toggleBrand(item)}
-                className="h-4 w-4 rounded accent-rose-500"
-              />
+          {brands.length === 0 ? (
+            <p className="text-sm text-gray-500">No brands</p>
+          ) : (
+            brands.map((item) => (
+              <label
+                key={item.id}
+                className="flex cursor-pointer items-center gap-3"
+              >
+                <input
+                  type="checkbox"
+                  checked={brand.includes(item.name)}
+                  onChange={() => toggleBrand(item.name)}
+                  className="h-4 w-4 rounded accent-rose-500"
+                />
 
-              <span>{item}</span>
-            </label>
-          ))}
+                <span>{item.name}</span>
+              </label>
+            ))
+          )}
         </div>
       </div>
 
-      {/* Skin Type */}
-
-      <div className="mt-10">
-        <h3 className="mb-4 font-semibold">Skin Type</h3>
-
-        <select
-          value={skinType}
-          onChange={(e) => setSkinType(e.target.value)}
-          className="w-full rounded-xl border border-gray-200 p-3 outline-none focus:border-rose-500"
-        >
-          <option value="">All Skin Types</option>
-
-          {skinTypes.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Price */}
-
       <div className="mt-10">
-        <h3 className="mb-4 font-semibold">Max Price</h3>
+        <h3 className="mb-4 font-semibold">Maximum Price</h3>
 
         <input
           type="range"
           min="0"
-          max="120"
+          max="500"
           value={maxPrice}
           onChange={(e) => setMaxPrice(Number(e.target.value))}
           className="w-full accent-rose-500"
@@ -141,51 +150,8 @@ export default function FilterSidebar({
 
         <div className="mt-2 flex justify-between text-sm text-gray-500">
           <span>$0</span>
-
           <span>${maxPrice}</span>
         </div>
-      </div>
-
-      {/* Rating */}
-
-      <div className="mt-10">
-        <h3 className="mb-4 font-semibold">Minimum Rating</h3>
-
-        <div className="space-y-3">
-          {[5, 4, 3].map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setRating(value)}
-              className={`block w-full rounded-xl border p-3 text-left transition ${
-                rating === value
-                  ? "border-rose-500 bg-rose-50"
-                  : "hover:border-rose-500"
-              }`}
-            >
-              {"★".repeat(value)}
-              {"☆".repeat(5 - value)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Availability */}
-
-      <div className="mt-10">
-        <h3 className="mb-4 font-semibold">Availability</h3>
-
-        <label className="flex items-center gap-3">
-          <input type="checkbox" />
-
-          <span>In Stock</span>
-        </label>
-
-        <label className="mt-3 flex items-center gap-3">
-          <input type="checkbox" />
-
-          <span>On Sale</span>
-        </label>
       </div>
     </aside>
   );

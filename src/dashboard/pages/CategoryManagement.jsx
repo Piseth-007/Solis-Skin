@@ -8,12 +8,15 @@ import {
   deleteCategory,
 } from "../../api/categoryApi";
 
+import { getProducts } from "../../api/productApi";
+
 import CategoryTable from "../components/categories/CategoryTable";
 import CategoryModal from "../components/categories/CategoryModal";
 import DeleteConfirmModal from "../components/common/DeleteConfirmModal";
 
 export default function CategoryManagement() {
   const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -26,23 +29,27 @@ export default function CategoryManagement() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  const loadCategories = async () => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
     try {
       setLoading(true);
 
-      const data = await getCategories();
+      const [categoryData, productData] = await Promise.all([
+        getCategories(),
+        getProducts(0, 100),
+      ]);
 
-      setCategories(data);
+      setCategories(categoryData);
+      setProducts(productData.content || []);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
 
   const filteredCategories = useMemo(() => {
     return categories.filter((item) =>
@@ -61,25 +68,27 @@ export default function CategoryManagement() {
   };
 
   const handleSave = async (form) => {
-    try {
-      setSaving(true);
+  try {
+    setSaving(true);
 
-      if (editingCategory) {
-        await updateCategory(editingCategory.id, form);
-      } else {
-        await createCategory(form);
-      }
-
-      setOpenModal(false);
-      setEditingCategory(null);
-
-      await loadCategories();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSaving(false);
+    if (editingCategory) {
+      await updateCategory(editingCategory.id, form);
+    } else {
+      await createCategory(form);
     }
-  };
+
+    setOpenModal(false);
+    setEditingCategory(null);
+
+    await loadData();
+
+  } catch (error) {
+    console.error("Save Error:", error);
+    console.log(error.response?.data);
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleDeleteClick = (category) => {
     setSelectedCategory(category);
@@ -95,18 +104,14 @@ export default function CategoryManagement() {
       setDeleteOpen(false);
       setSelectedCategory(null);
 
-      await loadCategories();
+      await loadData();
     } catch (error) {
       console.error(error);
     }
   };
 
   const totalCategories = categories.length;
-
-  const totalProducts = categories.reduce(
-    (sum, item) => sum + (item.productCount ?? item.products?.length ?? 0),
-    0,
-  );
+  const totalProducts = products.length;
 
   return (
     <div className="space-y-6">
@@ -114,7 +119,6 @@ export default function CategoryManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Category Management</h1>
-
           <p className="text-gray-500">Manage your product categories</p>
         </div>
 
@@ -127,9 +131,9 @@ export default function CategoryManagement() {
         </button>
       </div>
 
-      {/* Stats */}
+      {/* Statistics */}
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="rounded-xl  bg-white p-6 shadow">
+        <div className="rounded-xl bg-white p-6 shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Total Categories</p>
@@ -141,7 +145,7 @@ export default function CategoryManagement() {
           </div>
         </div>
 
-        <div className="rounded-xl  bg-white p-6 shadow">
+        <div className="rounded-xl bg-white p-6 shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Total Products</p>
@@ -155,7 +159,7 @@ export default function CategoryManagement() {
       </div>
 
       {/* Search */}
-      <div className="rounded-xl  bg-white p-5 shadow">
+      <div className="rounded-xl bg-white p-5 shadow">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-3 text-gray-400" size={18} />
 
@@ -177,6 +181,7 @@ export default function CategoryManagement() {
       ) : (
         <CategoryTable
           categories={filteredCategories}
+          products={products}
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
         />

@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 
+const initialForm = {
+  fullName: "",
+  email: "",
+  phone: "",
+  address: "",
+  role: "ROLE_USER",
+  active: true,
+};
+
 export default function CustomerForm({
-  customer,
+  customer = null,
   onSubmit,
   onCancel,
   loading = false,
 }) {
-  const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    address: "",
-    role: "ROLE_USER",
-    active: true,
-  });
+  const [form, setForm] = useState(initialForm);
 
   useEffect(() => {
     if (customer) {
@@ -25,6 +27,8 @@ export default function CustomerForm({
         role: customer.role || "ROLE_USER",
         active: customer.active ?? true,
       });
+    } else {
+      setForm(initialForm);
     }
   }, [customer]);
 
@@ -45,25 +49,27 @@ export default function CustomerForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Name */}
+      {/* Full Name */}
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Full Name
         </label>
 
         <input
+          type="text"
           name="fullName"
           value={form.fullName}
           onChange={handleChange}
+          placeholder="Enter full name"
           required
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-pink-500 focus:outline-none focus:ring-4 focus:ring-pink-100"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-pink-500 focus:ring-4 focus:ring-pink-100"
         />
       </div>
 
       {/* Email */}
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
-          Email
+          Email Address
         </label>
 
         <input
@@ -71,22 +77,25 @@ export default function CustomerForm({
           name="email"
           value={form.email}
           onChange={handleChange}
+          placeholder="example@email.com"
           required
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-pink-500 focus:outline-none focus:ring-4 focus:ring-pink-100"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-pink-500 focus:ring-4 focus:ring-pink-100"
         />
       </div>
 
       {/* Phone */}
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
-          Phone
+          Phone Number
         </label>
 
         <input
+          type="text"
           name="phone"
           value={form.phone}
           onChange={handleChange}
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-pink-500 focus:outline-none focus:ring-4 focus:ring-pink-100"
+          placeholder="012345678"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-pink-500 focus:ring-4 focus:ring-pink-100"
         />
       </div>
 
@@ -101,12 +110,14 @@ export default function CustomerForm({
           name="address"
           value={form.address}
           onChange={handleChange}
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-pink-500 focus:outline-none focus:ring-4 focus:ring-pink-100"
+          placeholder="Enter address"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-pink-500 focus:ring-4 focus:ring-pink-100"
         />
       </div>
 
-      {/* Role + Status */}
+      {/* Role & Status */}
       <div className="grid gap-6 md:grid-cols-2">
+        {/* Role */}
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">
             Role
@@ -116,15 +127,16 @@ export default function CustomerForm({
             name="role"
             value={form.role}
             onChange={handleChange}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-pink-500 focus:outline-none focus:ring-4 focus:ring-pink-100"
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-pink-500 focus:ring-4 focus:ring-pink-100"
           >
             <option value="ROLE_USER">Customer</option>
             <option value="ROLE_ADMIN">Administrator</option>
           </select>
         </div>
 
+        {/* Status */}
         <div className="flex items-end">
-          <label className="flex items-center gap-3 rounded-xl border border-slate-300 px-4 py-3 w-full cursor-pointer">
+          <label className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-slate-300 px-4 py-3">
             <input
               type="checkbox"
               name="active"
@@ -143,7 +155,8 @@ export default function CustomerForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl border border-slate-300 px-5 py-2.5 font-medium hover:bg-slate-100"
+          disabled={loading}
+          className="rounded-xl border border-slate-300 px-5 py-2.5 font-medium transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Cancel
         </button>
@@ -151,7 +164,7 @@ export default function CustomerForm({
         <button
           type="submit"
           disabled={loading}
-          className="rounded-xl bg-pink-600 px-6 py-2.5 font-medium text-white hover:bg-pink-700 disabled:opacity-50"
+          className="rounded-xl bg-pink-600 px-6 py-2.5 font-medium text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading
             ? "Saving..."

@@ -1,18 +1,21 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, CreditCard, MapPin, Package, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
+import { useOrders } from "../../context/OrderContext";
+import toast from "react-hot-toast";
 
 export default function OrderReviewModal({
   open,
   onClose,
+  onOrderPlaced,
   customer,
   paymentMethod,
 }) {
-  const navigate = useNavigate();
-
-  const { cart, totalPrice, clearCart } = useCart();
+  const { cart, totalPrice } = useCart();
+  const { user } = useAuth();
+  const { placeOrder } = useOrders();
 
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -24,6 +27,13 @@ export default function OrderReviewModal({
     acleda: "ACLEDA Bank",
   };
 
+  const paymentMethodMap = {
+    cod: "CASH",
+    card: "CARD",
+    aba: "ABA",
+    acleda: "ACLEDA",
+  };
+
   const shipping = totalPrice >= 50 ? 0 : 5;
   const tax = totalPrice * 0.1;
   const total = totalPrice + shipping + tax;
@@ -31,18 +41,46 @@ export default function OrderReviewModal({
   const handleConfirm = async () => {
     if (!agree) return;
 
-    setLoading(true);
+    if (!user?.userId) {
+      toast.error("Please sign in before placing an order.");
+      return;
+    }
 
-    // simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      setLoading(true);
 
-    clearCart();
+      const orderRequest = {
+        userId: user.userId,
+        shippingAddress: [
+          customer.address,
+          customer.city,
+          customer.province,
+          customer.postalCode,
+        ]
+          .filter(Boolean)
+          .join(", "),
 
-    setLoading(false);
+        note: "",
 
-    onClose();
+        paymentMethod: paymentMethodMap[paymentMethod],
 
-    navigate("/order-success");
+        items: cart.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+      };
+
+      await placeOrder(orderRequest);
+
+      toast.success("Order placed successfully!");
+      onOrderPlaced();
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Failed to place order.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -99,7 +137,6 @@ export default function OrderReviewModal({
 
             <div className="max-h-[70vh] space-y-8 overflow-y-auto p-6">
               {/* Shipping */}
-
               <div>
                 <div className="mb-3 flex items-center gap-2">
                   <MapPin className="text-rose-600" size={20} />
@@ -129,9 +166,7 @@ export default function OrderReviewModal({
                   </p>
                 </div>
               </div>
-
               {/* Payment */}
-
               <div>
                 <div className="mb-3 flex items-center gap-2">
                   <CreditCard size={20} className="text-rose-600" />
@@ -143,9 +178,7 @@ export default function OrderReviewModal({
                   {paymentNames[paymentMethod]}
                 </div>
               </div>
-
               {/* Products */}
-
               <div>
                 <div className="mb-4 flex items-center gap-2">
                   <Package className="text-rose-600" size={20} />
@@ -160,7 +193,7 @@ export default function OrderReviewModal({
                       className="flex items-center gap-4 rounded-xl border p-3"
                     >
                       <img
-                        src={item.image}
+                        src={item.image || item.imageUrl || "/placeholder.png"}
                         alt={item.name}
                         className="h-16 w-16 rounded-lg object-cover"
                       />
@@ -179,26 +212,23 @@ export default function OrderReviewModal({
                     </div>
                   ))}
                 </div>
-              </div>
-
+              </div>{" "}
               {/* Totals */}
-
               <div className="space-y-3 rounded-xl bg-gray-50 p-5">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-
                   <span>${totalPrice.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span>Shipping</span>
-
-                  <span>{shipping === 0 ? "FREE" : `$${shipping}`}</span>
+                  <span>
+                    {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
+                  </span>
                 </div>
 
                 <div className="flex justify-between">
-                  <span>Tax</span>
-
+                  <span>Tax (10%)</span>
                   <span>${tax.toFixed(2)}</span>
                 </div>
 
@@ -206,13 +236,10 @@ export default function OrderReviewModal({
 
                 <div className="flex justify-between text-xl font-bold">
                   <span>Total</span>
-
                   <span>${total.toFixed(2)}</span>
                 </div>
               </div>
-
               {/* Agreement */}
-
               <label className="flex items-start gap-3">
                 <input
                   type="checkbox"
@@ -233,7 +260,8 @@ export default function OrderReviewModal({
             <div className="flex justify-end gap-4 border-t p-6">
               <button
                 onClick={onClose}
-                className="rounded-xl border px-6 py-3 font-semibold hover:bg-gray-100"
+                disabled={loading}
+                className="rounded-xl border px-6 py-3 font-semibold hover:bg-gray-100 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -241,9 +269,19 @@ export default function OrderReviewModal({
               <button
                 disabled={!agree || loading}
                 onClick={handleConfirm}
-                className="rounded-xl bg-rose-600 px-8 py-3 font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-xl bg-rose-600 px-8 py-3 font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Processing..." : "Confirm Order"}
+                {loading ? (
+                  <>
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={20} />
+                    Confirm Order
+                  </>
+                )}
               </button>
             </div>
           </motion.div>

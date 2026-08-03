@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { UploadCloud, X } from "lucide-react";
 
 const initialForm = {
@@ -19,6 +19,8 @@ export default function BrandModal({
   const [form, setForm] = useState(initialForm);
   const [preview, setPreview] = useState("");
 
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     if (!open) return;
 
@@ -32,7 +34,11 @@ export default function BrandModal({
       });
 
       if (brand.logoUrl) {
-        setPreview(`http://localhost:8080${brand.logoUrl}`);
+        setPreview(
+          brand.logoUrl.startsWith("http")
+            ? brand.logoUrl
+            : `http://localhost:8080${brand.logoUrl}`,
+        );
       } else {
         setPreview("");
       }
@@ -40,7 +46,19 @@ export default function BrandModal({
       setForm(initialForm);
       setPreview("");
     }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }, [brand, open]);
+
+  useEffect(() => {
+    return () => {
+      if (preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -52,9 +70,23 @@ export default function BrandModal({
   };
 
   const handleLogo = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
 
     if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image size must be less than 5MB.");
+      return;
+    }
+
+    if (preview.startsWith("blob:")) {
+      URL.revokeObjectURL(preview);
+    }
 
     setForm((prev) => ({
       ...prev,
@@ -66,7 +98,14 @@ export default function BrandModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     onSave(form);
+  };
+
+  const handleClose = () => {
+    if (loading) return;
+
+    onClose();
   };
 
   if (!open) return null;
@@ -87,13 +126,16 @@ export default function BrandModal({
           </div>
 
           <button
-            onClick={onClose}
-            className="rounded-lg p-2 hover:bg-gray-100"
+            type="button"
+            onClick={handleClose}
+            disabled={loading}
+            className="rounded-lg p-2 hover:bg-gray-100 disabled:opacity-50"
           >
-            <X />
+            <X size={20} />
           </button>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6 p-6">
           {/* Logo */}
           <div>
@@ -114,11 +156,14 @@ export default function BrandModal({
                     Click to upload brand logo
                   </p>
 
-                  <p className="text-xs text-gray-400">JPG • PNG • WEBP</p>
+                  <p className="text-xs text-gray-400">
+                    JPG • PNG • WEBP (Max 5MB)
+                  </p>
                 </>
               )}
 
               <input
+                ref={fileInputRef}
                 hidden
                 type="file"
                 accept="image/*"
@@ -127,7 +172,7 @@ export default function BrandModal({
             </label>
           </div>
 
-          {/* Brand Name */}
+          {/* Name */}
           <div>
             <label className="mb-2 block font-medium">Brand Name</label>
 
@@ -168,7 +213,7 @@ export default function BrandModal({
             />
           </div>
 
-          {/* Status */}
+          {/* Active */}
           <div className="flex items-center gap-3">
             <input
               id="active"
@@ -185,8 +230,9 @@ export default function BrandModal({
           <div className="flex justify-end gap-3 border-t pt-5">
             <button
               type="button"
-              onClick={onClose}
-              className="rounded-lg border px-5 py-3 hover:bg-gray-100"
+              onClick={handleClose}
+              disabled={loading}
+              className="rounded-lg border px-5 py-3 hover:bg-gray-100 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -194,7 +240,7 @@ export default function BrandModal({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-pink-600 px-6 py-3 font-semibold text-white hover:bg-pink-700 disabled:opacity-50"
+              className="rounded-lg bg-pink-600 px-6 py-3 font-semibold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Saving..." : brand ? "Update Brand" : "Create Brand"}
             </button>

@@ -185,10 +185,7 @@ export default function ProductManagement() {
       formData.append("price", form.price);
       formData.append("stock", form.stock);
       formData.append("brandId", form.brandId);
-
-      if (form.categoryId) {
-        formData.append("categoryId", form.categoryId);
-      }
+      formData.append("categoryId", form.categoryId);
 
       if (form.image) {
         formData.append("image", form.image);
@@ -200,12 +197,13 @@ export default function ProductManagement() {
         await createProduct(formData);
       }
 
-      setOpenModal(false);
-      setEditingProduct(null);
+      console.log("Update success"); // <-- add this
 
+      handleCloseModal();
       await loadProducts();
     } catch (error) {
-      console.error(error);
+      console.error("Save failed:", error);
+      console.log(error.response?.data);
     } finally {
       setSaving(false);
     }
@@ -244,6 +242,8 @@ export default function ProductManagement() {
   // ==========================================
 
   const handleCloseModal = () => {
+    console.log("Closing modal");
+
     setOpenModal(false);
     setEditingProduct(null);
   };
@@ -256,7 +256,9 @@ export default function ProductManagement() {
   // ==========================================
   // UI
   // ==========================================
-
+  useEffect(() => {
+    console.log("openModal =", openModal);
+  }, [openModal]);
   return (
     <div className="space-y-6">
       <ProductToolbar

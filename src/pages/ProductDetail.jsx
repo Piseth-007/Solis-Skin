@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import products from "../data/products";
+
+import { getProductById } from "../api/productApi";
 
 import ProductGallery from "../components/product/ProductGallery";
 import ProductInfo from "../components/product/ProductInfo";
@@ -12,7 +14,31 @@ import ReviewList from "../components/reviews/ReviewList";
 export default function ProductDetail() {
   const { id } = useParams();
 
-  const product = products.find((item) => item.id === Number(id));
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadProduct();
+  }, [id]);
+
+  const loadProduct = async () => {
+    try {
+      const data = await getProductById(id);
+      setProduct(data);
+    } catch (error) {
+      console.error("Failed to load product:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <h2 className="text-2xl font-semibold">Loading...</h2>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -53,10 +79,10 @@ export default function ProductDetail() {
           <ProductInfo product={product} />
         </div>
 
-        {/* Description / Ingredients / Usage */}
+        {/* Tabs */}
         <ProductTabs product={product} />
 
-        {/* Customer Reviews */}
+        {/* Reviews */}
         <section className="mt-20">
           <h2 className="mb-8 text-3xl font-bold">Customer Reviews</h2>
 
@@ -67,7 +93,7 @@ export default function ProductDetail() {
           </div>
         </section>
 
-        {/* Related Products */}
+        {/* Related */}
         <div className="mt-20">
           <RelatedProducts product={product} />
         </div>

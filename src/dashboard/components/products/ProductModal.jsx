@@ -38,7 +38,7 @@ export default function ProductModal({
       });
 
       if (product.imageUrl) {
-        setPreview(`http://localhost:8080${product.imageUrl}`);
+        setPreview(product.imageUrl);
       } else {
         setPreview("");
       }
@@ -113,6 +113,10 @@ export default function ProductModal({
                   src={preview}
                   alt="Preview"
                   className="h-full w-full rounded-xl object-cover"
+                  onError={(e) => {
+                    console.log("Image failed:", preview);
+                    e.target.src = "/placeholder.png";
+                  }}
                 />
               ) : (
                 <>

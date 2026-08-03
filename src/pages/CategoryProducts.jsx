@@ -1,77 +1,69 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Grid3X3, List, Search } from "lucide-react";
 
-import categories from "../data/categories";
-import products from "../data/products";
+import { getCategoryById } from "../api/categoryApi";
+import { getProducts } from "../api/productApi";
 
 import ProductCard from "../components/common/ProductCard";
 import ProductListCard from "../components/common/ProductListCard";
 import FilterSidebar from "../components/category/FilterSidebar";
 
 export default function CategoryProducts() {
-  const { slug } = useParams();
+  const { id } = useParams();
 
-  const category = categories.find(
-    (c) => c.slug.toLowerCase() === slug.toLowerCase(),
-  );
+  const [category, setCategory] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
-
   const [sortBy, setSortBy] = useState("default");
-
   const [view, setView] = useState("grid");
 
   const [priceFilter, setPriceFilter] = useState("all");
-
-  const [selectedBrands, setSelectedBrands] = useState([]);
-
-  const [selectedSkinTypes, setSelectedSkinTypes] = useState([]);
-
-  const [selectedRating, setSelectedRating] = useState(0);
-
   const [inStockOnly, setInStockOnly] = useState(false);
 
-  // ==========================
-  // Clear Filters
-  // ==========================
+  useEffect(() => {
+    loadData();
+  }, [id]);
+
+  const loadData = async () => {
+    try {
+      const categoryData = await getCategoryById(id);
+      const productData = await getProducts();
+
+      setCategory(categoryData);
+
+      const categoryProducts = productData.filter(
+        (product) => product.categoryId === categoryData.id,
+      );
+
+      setProducts(categoryProducts);
+    } catch (error) {
+      console.error("Failed to load category products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const clearFilters = () => {
     setSearch("");
-
     setSortBy("default");
-
     setPriceFilter("all");
-
-    setSelectedBrands([]);
-
-    setSelectedSkinTypes([]);
-
-    setSelectedRating(0);
-
     setInStockOnly(false);
   };
 
-  // ==========================
-  // Filter Products
-  // ==========================
-
   const filteredProducts = useMemo(() => {
-    let data = products.filter(
-  (product) =>
-    product.category.toLowerCase() === slug.toLowerCase()
-);
+    let data = [...products];
 
     // Search
-
-    if (search) {
+    if (search.trim()) {
       data = data.filter((product) =>
         product.name.toLowerCase().includes(search.toLowerCase()),
       );
     }
 
     // Price
-
     switch (priceFilter) {
       case "under20":
         data = data.filter((p) => p.price < 20);
@@ -89,34 +81,12 @@ export default function CategoryProducts() {
         break;
     }
 
-    // Brand
-
-    if (selectedBrands.length) {
-      data = data.filter((product) => selectedBrands.includes(product.brand));
-    }
-
-    // Skin Type
-
-    if (selectedSkinTypes.length) {
-      data = data.filter((product) =>
-        selectedSkinTypes.includes(product.skinType),
-      );
-    }
-
-    // Rating
-
-    if (selectedRating > 0) {
-      data = data.filter((product) => product.rating >= selectedRating);
-    }
-
     // Stock
-
     if (inStockOnly) {
-      data = data.filter((product) => product.stock > 0);
+      data = data.filter((p) => p.stock > 0);
     }
 
     // Sort
-
     switch (sortBy) {
       case "price-low":
         data.sort((a, b) => a.price - b.price);
@@ -124,10 +94,6 @@ export default function CategoryProducts() {
 
       case "price-high":
         data.sort((a, b) => b.price - a.price);
-        break;
-
-      case "rating":
-        data.sort((a, b) => b.rating - a.rating);
         break;
 
       case "name":
@@ -139,16 +105,15 @@ export default function CategoryProducts() {
     }
 
     return data;
-  }, [
-    slug,
-    search,
-    sortBy,
-    priceFilter,
-    selectedBrands,
-    selectedSkinTypes,
-    selectedRating,
-    inStockOnly,
-  ]);
+  }, [products, search, priceFilter, inStockOnly, sortBy]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-lg font-semibold text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   if (!category) {
     return (
@@ -157,11 +122,9 @@ export default function CategoryProducts() {
       </div>
     );
   }
-
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Hero */}
-
       <section className="border-b bg-white">
         <div className="mx-auto max-w-7xl px-6 py-14">
           <div className="text-sm text-gray-500">
@@ -182,36 +145,28 @@ export default function CategoryProducts() {
 
           <h1 className="mt-4 text-5xl font-bold">{category.name}</h1>
 
-          <p className="mt-4 max-w-2xl text-gray-500">{category.description}</p>
+          <p className="mt-4 max-w-2xl text-gray-500">
+            {category.description ||
+              "Discover premium skincare products in this category."}
+          </p>
         </div>
       </section>
 
       {/* Content */}
-
       <section className="mx-auto max-w-7xl px-6 py-12">
         <div className="grid gap-10 lg:grid-cols-4">
           {/* Sidebar */}
-
           <FilterSidebar
-            products={products}
             priceFilter={priceFilter}
             setPriceFilter={setPriceFilter}
-            selectedBrands={selectedBrands}
-            setSelectedBrands={setSelectedBrands}
-            selectedSkinTypes={selectedSkinTypes}
-            setSelectedSkinTypes={setSelectedSkinTypes}
-            selectedRating={selectedRating}
-            setSelectedRating={setSelectedRating}
             inStockOnly={inStockOnly}
             setInStockOnly={setInStockOnly}
             clearFilters={clearFilters}
           />
 
           {/* Products */}
-
           <div className="lg:col-span-3">
             {/* Toolbar */}
-
             <div className="mb-8 rounded-2xl bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 <div>
@@ -220,13 +175,12 @@ export default function CategoryProducts() {
                   </h2>
 
                   <p className="mt-1 text-sm text-gray-500">
-                    Browse the best {category.name.toLowerCase()} products.
+                    Browse products in {category.name}.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap gap-4">
                   {/* Search */}
-
                   <div className="relative">
                     <Search
                       size={18}
@@ -238,12 +192,11 @@ export default function CategoryProducts() {
                       placeholder="Search products..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="rounded-xl border pl-10 pr-4 py-2 focus:border-rose-500 focus:outline-none"
+                      className="rounded-xl border py-2 pl-10 pr-4 focus:border-rose-500 focus:outline-none"
                     />
                   </div>
 
                   {/* Sort */}
-
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
@@ -252,12 +205,10 @@ export default function CategoryProducts() {
                     <option value="default">Featured</option>
                     <option value="price-low">Price: Low → High</option>
                     <option value="price-high">Price: High → Low</option>
-                    <option value="rating">Highest Rated</option>
                     <option value="name">Name A-Z</option>
                   </select>
 
-                  {/* View Toggle */}
-
+                  {/* View */}
                   <div className="flex overflow-hidden rounded-xl border">
                     <button
                       onClick={() => setView("grid")}
@@ -282,7 +233,6 @@ export default function CategoryProducts() {
             </div>
 
             {/* Products */}
-
             {filteredProducts.length === 0 ? (
               <div className="rounded-2xl bg-white py-20 text-center shadow-sm">
                 <h3 className="text-2xl font-bold">No Products Found</h3>

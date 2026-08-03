@@ -3,9 +3,11 @@ import { generateInvoice } from "../../utils/generateInvoice";
 import { useCart } from "../../context/CartContext";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+
 export default function OrderSummary({ order }) {
   const { addToCart } = useCart();
   const navigate = useNavigate();
+
   const handleBuyAgain = () => {
     const confirmed = window.confirm(
       "Add all items from this order to your cart?",
@@ -14,17 +16,20 @@ export default function OrderSummary({ order }) {
     if (!confirmed) return;
 
     order.items.forEach((item) => {
-      addToCart(item, item.quantity);
+      addToCart(
+        {
+          id: item.productId,
+          name: item.productName,
+          imageUrl: item.productImage,
+          price: item.price,
+        },
+        item.quantity,
+      );
     });
 
     toast.success("Items added to your cart!");
     navigate("/cart");
   };
-
-  const shipping = 0;
-  const tax = 2;
-
-  const total = order.total + shipping + tax;
 
   return (
     <div className="sticky top-24 rounded-3xl bg-white p-6 shadow-sm">
@@ -37,24 +42,24 @@ export default function OrderSummary({ order }) {
       <div className="space-y-4">
         <div className="flex justify-between">
           <span>Subtotal</span>
-          <span>${order.total}</span>
+          <span>${Number(order.subtotal).toFixed(2)}</span>
         </div>
 
         <div className="flex justify-between">
           <span>Shipping</span>
-          <span>Free</span>
+          <span>${Number(order.shippingFee).toFixed(2)}</span>
         </div>
 
         <div className="flex justify-between">
-          <span>Tax</span>
-          <span>${tax}</span>
+          <span>Discount</span>
+          <span>-${Number(order.discount).toFixed(2)}</span>
         </div>
 
         <hr />
 
         <div className="flex justify-between text-xl font-bold">
           <span>Total</span>
-          <span>${total}</span>
+          <span>${Number(order.totalAmount).toFixed(2)}</span>
         </div>
       </div>
 

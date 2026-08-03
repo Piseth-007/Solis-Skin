@@ -5,25 +5,79 @@ import { getCustomers } from "./customerApi";
 
 export async function getDashboardStats() {
   const [products, categories, orders, customers] = await Promise.all([
-    getProducts(),
+    getProducts(0, 100),
     getCategories(),
     getOrders(),
     getCustomers(),
   ]);
 
-  console.log("Products:", products);
-  console.log("Categories:", categories);
-  console.log("Orders:", orders);
-  console.log("Customers:", customers);
+  // Spring Page<Product>
+  const productList = products?.content || [];
 
-  console.log("Is Orders Array?", Array.isArray(orders));
+  // Array responses
+  const categoryList = Array.isArray(categories)
+    ? categories
+    : categories?.content || [];
+
+  const orderList = Array.isArray(orders) ? orders : orders?.content || [];
+
+  const customerList = Array.isArray(customers)
+    ? customers
+    : customers?.content || [];
+
+  // Revenue
+  const revenue = orderList.reduce(
+    (sum, order) => sum + Number(order.totalAmount || 0),
+    0,
+  );
+
+  // Top products
+  const topProducts = [...productList]
+    .sort((a, b) => (b.sold || 0) - (a.sold || 0))
+    .slice(0, 5);
+
+  // Monthly revenue
+  const monthlyRevenue = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ].map((month, index) => {
+    const total = orderList
+      .filter((o) => {
+        if (!o.createdAt) return false;
+        return new Date(o.createdAt).getMonth() === index;
+      })
+      .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+
+    return {
+      month,
+      revenue: total,
+    };
+  });
 
   return {
-    products: Array.isArray(products) ? products.length : 0,
-    categories: Array.isArray(categories) ? categories.length : 0,
-    orders: Array.isArray(orders) ? orders.length : 0,
-    customers: Array.isArray(customers) ? customers.length : 0,
+    products: products?.totalElements ?? productList.length,
+    categories: categoryList.length,
+    orders: orderList.length,
+    customers: customerList.length,
 
-    recentOrders: Array.isArray(orders) ? orders.slice(0, 5) : [],
+    revenue,
+
+    monthlyRevenue,
+
+    recentOrders: [...orderList]
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .slice(0, 5),
+
+    topProducts,
   };
 }

@@ -8,13 +8,12 @@ import OrderSummary from "../components/checkout/OrderSummary";
 import OrderReviewModal from "../components/checkout/OrderReviewModal";
 
 import { useCart } from "../context/CartContext";
-import { useOrders } from "../context/OrderContext";
+
 
 export default function Checkout() {
   const navigate = useNavigate();
 
-  const { cart, totalPrice, clearCart } = useCart();
-  const { placeOrder } = useOrders();
+  const { cart, clearCart } = useCart();
 
   const [customer, setCustomer] = useState({
     fullName: "",
@@ -46,39 +45,7 @@ export default function Checkout() {
       return;
     }
 
-    const shipping = totalPrice >= 50 ? 0 : 5;
-    const tax = totalPrice * 0.1;
-
-    const order = {
-      id: `ORD-${Date.now()}`,
-
-      date: new Date().toLocaleString(),
-
-      status: "Processing",
-
-      paymentStatus: paymentMethod === "cod" ? "Pending" : "Paid",
-
-      paymentMethod,
-
-      shippingAddress: customer,
-
-      items: cart,
-
-      subtotal: totalPrice,
-
-      shipping,
-
-      tax,
-
-      total: totalPrice + shipping + tax,
-    };
-
-    placeOrder(order);
-
-    clearCart();
-
-    toast.success("Order placed successfully!");
-
+    // Only open the review modal
     setOpenReview(true);
   };
 
@@ -110,9 +77,11 @@ export default function Checkout() {
 
       <OrderReviewModal
         open={openReview}
-        onClose={() => {
+        onClose={() => setOpenReview(false)}
+        onOrderPlaced={() => {
+          clearCart();
           setOpenReview(false);
-          navigate("/orders");
+          navigate("/order-success");
         }}
         customer={customer}
         paymentMethod={paymentMethod}

@@ -62,7 +62,7 @@ export default function AppRoutes() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<WishList />} />
           <Route path="/categories" element={<Categories />} />
-          <Route path="/category/:slug" element={<CategoryProducts />} />
+          <Route path="/category/:id" element={<CategoryProducts />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
 
@@ -75,7 +75,7 @@ export default function AppRoutes() {
             <Route path="/orders/:id" element={<OrderDetail />} />
             <Route path="/review/:orderId" element={<WriteReview />} />
             <Route path="/brands" element={<Brands />} />
-            <Route path="/brand/:slug" element={<BrandProducts />} />
+            <Route path="/brands/:id" element={<BrandProducts />} />
           </Route>
         </Route>
 
