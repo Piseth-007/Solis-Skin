@@ -39,3 +39,10 @@ export async function deleteUser(id) {
   const response = await api.delete(`/users/${id}`);
   return response.data;
 }
+export async function changePassword(id, currentPassword, newPassword) {
+  const response = await api.put(`/users/${id}/password`, {
+    currentPassword,
+    newPassword,
+  });
+  return response.data;
+}

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
@@ -12,19 +13,44 @@ import OrderStatusBadge from "../components/orders/OrderStatusBadge";
 
 export default function OrderDetail() {
   const navigate = useNavigate();
-
   const { id } = useParams();
-
   const { getOrder } = useOrders();
 
-  const order = getOrder(id);
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchOrder = async () => {
+      setLoading(true);
+      const data = await getOrder(id);
+      if (!cancelled) {
+        setOrder(data);
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <section className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-500">Loading order...</p>
+      </section>
+    );
+  }
 
   if (!order) {
     return (
       <section className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <h2 className="text-3xl font-bold">Order not found.</h2>
-
           <Link
             to="/orders"
             className="mt-6 inline-flex rounded-xl bg-rose-600 px-6 py-3 font-semibold text-white hover:bg-rose-700"
@@ -49,36 +75,32 @@ export default function OrderDetail() {
 
         <div className="mb-10 flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold">Order #{order.id}</h1>
-
-            <p className="mt-2 text-gray-500">Placed on {order.date}</p>
+            <h1 className="text-4xl font-bold">Order #{order.orderNumber}</h1>
+            <p className="mt-2 text-gray-500">
+              Placed on {new Date(order.createdAt).toLocaleDateString()}
+            </p>
           </div>
 
           <OrderStatusBadge status={order.status} />
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Left Side */}
           <div className="space-y-6 lg:col-span-2">
             <OrderItem order={order} />
-
             <ShippingCard shipping={order.shippingAddress} />
-
             <PaymentCard order={order} />
-
             <OrderTimeline status={order.status} />
           </div>
 
-          {/* Right Side */}
           <div className="space-y-4">
             <OrderSummary order={order} />
 
-            {order.status === "Delivered" && (
+            {order.status === "DELIVERED" && (
               <button
                 onClick={() => navigate(`/review/${order.id}`)}
                 className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-700"
               >
-                 Write Review
+                Write Review
               </button>
             )}
           </div>

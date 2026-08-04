@@ -51,7 +51,7 @@ export default function Header() {
             </p>
           </div>
 
-          <ChevronDown size={18} className="hidden text-gray-500 md:block" />
+          {/* <ChevronDown size={18} className="hidden text-gray-500 md:block" /> */}
         </button>
       </div>
     </header>

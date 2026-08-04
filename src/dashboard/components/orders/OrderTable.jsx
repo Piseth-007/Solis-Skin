@@ -3,10 +3,12 @@ import PaymentStatusBadge from "./PaymentStatusBadge";
 
 export default function OrderTable({
   orders = [],
+  users = {},
   onView,
   onUpdate,
   onDelete,
 }) {
+  console.log("OrderTable orders:", orders);
   if (!orders.length) {
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
@@ -57,7 +59,9 @@ export default function OrderTable({
                 <td className="px-6 py-4 font-medium">{order.orderNumber}</td>
 
                 <td className="px-6 py-4">
-                  {order.user?.fullName || order.user?.email || "-"}
+                  {users[order.userId]?.fullName ||
+                    users[order.userId]?.email ||
+                    "-"}
                 </td>
 
                 <td className="px-6 py-4 font-medium">
