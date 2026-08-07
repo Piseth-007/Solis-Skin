@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { Package, AlertTriangle, XCircle, CheckCircle } from "lucide-react";
 
 import {
   getProducts,
@@ -9,6 +10,7 @@ import {
 
 import { getCategories } from "../../api/categoryApi";
 import { getBrands } from "../../api/brandApi";
+import { getImageUrl } from "../../utils/imageUrl";
 
 import ProductToolbar from "../components/products/ProductToolbar";
 import ProductTable from "../components/products/ProductTable";
@@ -18,84 +20,50 @@ import EmptyState from "../components/products/EmptyState";
 import ProductModal from "../components/products/ProductModal";
 import DeleteDialog from "../components/products/DeleteDialog";
 
-export default function ProductManagement() {
-  // ==========================================
-  // Data
-  // ==========================================
+const LOW_STOCK_THRESHOLD = 5;
+const FETCH_ALL_SIZE = 1000; // large enough to cover the whole catalog
 
-  const [products, setProducts] = useState([]);
+export default function ProductManagement() {
+  const [allProducts, setAllProducts] = useState([]); // full catalog, unfiltered
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
-
-  // ==========================================
-  // Loading
-  // ==========================================
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // ==========================================
-  // Pagination
-  // ==========================================
-
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
-
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-
-  // ==========================================
-  // Search
-  // ==========================================
 
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
   const [status, setStatus] = useState("");
 
-  // ==========================================
-  // Modal
-  // ==========================================
-
   const [openModal, setOpenModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-
-  // ==========================================
-  // Delete Dialog
-  // ==========================================
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // ==========================================
-  // Load Products
-  // ==========================================
-
-  const loadProducts = useCallback(async () => {
+  const loadAllProducts = useCallback(async () => {
     try {
       setLoading(true);
 
-      const response = await getProducts(page, size);
+      const response = await getProducts(0, FETCH_ALL_SIZE, "id,desc");
 
-      const products = response.content.map((item) => ({
+      const mapped = response.content.map((item) => ({
         ...item,
-        imageUrl: item.imageUrl ? `http://localhost:8080${item.imageUrl}` : "",
+        imageUrl: getImageUrl(item.imageUrl),
       }));
 
-      setProducts(products);
-      setTotalPages(response.totalPages);
-      setTotalElements(response.totalElements);
+      setAllProducts(mapped);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [page, size]);
-
-  // ==========================================
-  // Load Categories
-  // ==========================================
+  }, []);
 
   const loadCategories = async () => {
     try {
@@ -106,10 +74,6 @@ export default function ProductManagement() {
     }
   };
 
-  // ==========================================
-  // Load Brands
-  // ==========================================
-
   const loadBrands = async () => {
     try {
       const data = await getBrands();
@@ -119,30 +83,60 @@ export default function ProductManagement() {
     }
   };
 
-  // ==========================================
-  // Initial Load
-  // ==========================================
-
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
-
-  useEffect(() => {
+    loadAllProducts();
     loadCategories();
     loadBrands();
-  }, []);
+  }, [loadAllProducts]);
 
-  // ==========================================
-  // Search
-  // ==========================================
+  // Client-side filtering — applied whenever filters or the full list change
+  const filteredProducts = useMemo(() => {
+    return allProducts.filter((product) => {
+      const matchesKeyword = keyword
+        ? product.name?.toLowerCase().includes(keyword.toLowerCase())
+        : true;
+
+      const matchesCategory = category
+        ? String(product.category?.id ?? product.categoryId) ===
+          String(category)
+        : true;
+
+      const matchesBrand = brand
+        ? String(product.brand?.id ?? product.brandId) === String(brand)
+        : true;
+
+      const matchesStatus = status
+        ? status === "active"
+          ? product.active === true
+          : product.active === false
+        : true;
+
+      return matchesKeyword && matchesCategory && matchesBrand && matchesStatus;
+    });
+  }, [allProducts, keyword, category, brand, status]);
+
+  // Client-side pagination over the filtered result
+  const totalElements = filteredProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalElements / size));
+  const pagedProducts = useMemo(() => {
+    const start = page * size;
+    return filteredProducts.slice(start, start + size);
+  }, [filteredProducts, page, size]);
+
+  // Stats computed from the full unfiltered catalog
+  const stats = useMemo(() => {
+    const total = allProducts.length;
+    const lowStock = allProducts.filter(
+      (p) => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD,
+    ).length;
+    const outOfStock = allProducts.filter((p) => p.stock === 0).length;
+    const active = allProducts.filter((p) => p.active === true).length;
+    return { total, lowStock, outOfStock, active };
+  }, [allProducts]);
 
   const handleSearch = () => {
-    loadProducts();
+    setPage(0); // reset to first page whenever filters change
   };
-
-  // ==========================================
-  // Reset
-  // ==========================================
 
   const handleReset = () => {
     setKeyword("");
@@ -152,34 +146,21 @@ export default function ProductManagement() {
     setPage(0);
   };
 
-  // ==========================================
-  // Add
-  // ==========================================
-
   const handleAdd = () => {
     setEditingProduct(null);
     setOpenModal(true);
   };
-
-  // ==========================================
-  // Edit
-  // ==========================================
 
   const handleEdit = (product) => {
     setEditingProduct(product);
     setOpenModal(true);
   };
 
-  // ==========================================
-  // Save
-  // ==========================================
-
   const handleSave = async (form) => {
     try {
       setSaving(true);
 
       const formData = new FormData();
-
       formData.append("name", form.name);
       formData.append("description", form.description);
       formData.append("price", form.price);
@@ -197,21 +178,15 @@ export default function ProductManagement() {
         await createProduct(formData);
       }
 
-      console.log("Update success"); // <-- add this
-
       handleCloseModal();
-      await loadProducts();
+      await loadAllProducts();
     } catch (error) {
       console.error("Save failed:", error);
-      console.log(error.response?.data);
+      alert(error.response?.data?.message || "Failed to save product.");
     } finally {
       setSaving(false);
     }
   };
-
-  // ==========================================
-  // Delete
-  // ==========================================
 
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
@@ -223,27 +198,19 @@ export default function ProductManagement() {
 
     try {
       setDeleting(true);
-
       await deleteProduct(selectedProduct.id);
-
       setDeleteOpen(false);
       setSelectedProduct(null);
-
-      await loadProducts();
+      await loadAllProducts();
     } catch (error) {
       console.error("Delete product failed:", error);
+      alert(error.response?.data?.message || "Failed to delete product.");
     } finally {
       setDeleting(false);
     }
   };
 
-  // ==========================================
-  // Close
-  // ==========================================
-
   const handleCloseModal = () => {
-    console.log("Closing modal");
-
     setOpenModal(false);
     setEditingProduct(null);
   };
@@ -253,12 +220,6 @@ export default function ProductManagement() {
     setSelectedProduct(null);
   };
 
-  // ==========================================
-  // UI
-  // ==========================================
-  useEffect(() => {
-    console.log("openModal =", openModal);
-  }, [openModal]);
   return (
     <div className="space-y-6">
       <ProductToolbar
@@ -277,14 +238,64 @@ export default function ProductManagement() {
         brands={brands}
       />
 
+      <div className="grid gap-5 md:grid-cols-4">
+        <div className="rounded-xl bg-white p-6 shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total Products</p>
+              <h2 className="mt-2 text-3xl font-bold">{stats.total}</h2>
+            </div>
+            <Package size={32} className="text-blue-500" />
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-white p-6 shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">
+                Low Stock (≤{LOW_STOCK_THRESHOLD})
+              </p>
+              <h2 className="mt-2 text-3xl font-bold text-amber-600">
+                {stats.lowStock}
+              </h2>
+            </div>
+            <AlertTriangle size={32} className="text-amber-500" />
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-white p-6 shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Out of Stock</p>
+              <h2 className="mt-2 text-3xl font-bold text-red-600">
+                {stats.outOfStock}
+              </h2>
+            </div>
+            <XCircle size={32} className="text-red-500" />
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-white p-6 shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Active</p>
+              <h2 className="mt-2 text-3xl font-bold text-green-600">
+                {stats.active}
+              </h2>
+            </div>
+            <CheckCircle size={32} className="text-green-500" />
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <ProductSkeleton rows={size} />
-      ) : products.length === 0 ? (
+      ) : pagedProducts.length === 0 ? (
         <EmptyState onAdd={handleAdd} />
       ) : (
         <>
           <ProductTable
-            products={products}
+            products={pagedProducts}
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
           />

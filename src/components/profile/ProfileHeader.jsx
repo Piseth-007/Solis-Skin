@@ -4,7 +4,7 @@ export default function ProfileHeader() {
   const { user } = useAuth();
 
   const initials =
-    user?.name
+    user?.fullName
       ?.split(" ")
       .map((n) => n[0])
       .join("")
@@ -21,7 +21,7 @@ export default function ProfileHeader() {
           <h1 className="text-4xl font-bold">
             Welcome back,
             <br />
-            {user?.name}
+            {user?.fullName}
           </h1>
 
           <p className="mt-3 text-rose-100">

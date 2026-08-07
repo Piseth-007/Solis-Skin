@@ -15,30 +15,13 @@ export const getBrandById = async (id) => {
   const { data } = await api.get(`/brands/${id}`);
   return data;
 };
-
-/**
- * Create Brand
- */
 export const createBrand = async (formData) => {
-  const { data } = await api.post("/brands", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-
+  const { data } = await api.post("/brands", formData);
   return data;
 };
 
-/**
- * Update Brand
- */
 export const updateBrand = async (id, formData) => {
-  const { data } = await api.put(`/brands/${id}`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-
+  const { data } = await api.put(`/brands/${id}`, formData);
   return data;
 };
 

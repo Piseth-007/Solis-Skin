@@ -58,14 +58,6 @@ export default function DashboardStats({ stats }) {
                 <h2 className="mt-3 text-3xl font-bold text-slate-900">
                   {value}
                 </h2>
-
-                <div className="mt-4 flex items-center gap-2 text-sm">
-                  <span className="rounded-full bg-green-100 px-2 py-1 font-medium text-green-700">
-                    +12%
-                  </span>
-
-                  <span className="text-slate-500">vs last month</span>
-                </div>
               </div>
 
               <div

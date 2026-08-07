@@ -7,6 +7,8 @@ import {
   updateBrand,
   deleteBrand,
 } from "../../api/brandApi";
+import { getProducts } from "../../api/productApi";
+import { getImageUrl } from "../../utils/imageUrl";
 
 import BrandTable from "../components/brands/BrandTable";
 import BrandModal from "../components/brands/BrandModal";
@@ -14,6 +16,8 @@ import DeleteConfirmModal from "../components/common/DeleteConfirmModal";
 
 export default function BrandManagement() {
   const [brands, setBrands] = useState([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [productCountByBrand, setProductCountByBrand] = useState({});
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -29,23 +33,17 @@ export default function BrandManagement() {
 
   useEffect(() => {
     loadBrands();
+    loadProductStats();
   }, []);
 
   const loadBrands = async () => {
     try {
       setLoading(true);
-
       const data = await getBrands();
-
       const mappedBrands = data.map((brand) => ({
         ...brand,
-        logoUrl: brand.logoUrl
-          ? brand.logoUrl.startsWith("http")
-            ? brand.logoUrl
-            : `http://localhost:8080${brand.logoUrl}`
-          : "",
+        logoUrl: getImageUrl(brand.logoUrl),
       }));
-
       setBrands(mappedBrands);
     } catch (error) {
       console.error("Load Brands Error:", error);
@@ -54,11 +52,43 @@ export default function BrandManagement() {
     }
   };
 
+  const loadProductStats = async () => {
+    try {
+      // Large page size to fetch (effectively) all products for counting.
+      // If totalElements is available from the first call, prefer that
+      // for the headline number, and only fetch the full list for the
+      // per-brand breakdown.
+      const response = await getProducts(0, 1000, "id,desc");
+      const products = Array.isArray(response)
+        ? response
+        : response?.content || [];
+      const total = response?.totalElements ?? products.length;
+
+      setTotalProducts(total);
+
+      const counts = {};
+      products.forEach((product) => {
+        const brandId = product.brand?.id ?? product.brandId;
+        if (brandId != null) {
+          counts[brandId] = (counts[brandId] || 0) + 1;
+        }
+      });
+      setProductCountByBrand(counts);
+    } catch (error) {
+      console.error("Load Product Stats Error:", error);
+    }
+  };
+
   const filteredBrands = useMemo(() => {
-    return brands.filter((brand) =>
-      brand.name.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [brands, search]);
+    return brands
+      .filter((brand) =>
+        brand.name?.toLowerCase().includes(search.toLowerCase()),
+      )
+      .map((brand) => ({
+        ...brand,
+        productCount: productCountByBrand[brand.id] || 0,
+      }));
+  }, [brands, search, productCountByBrand]);
 
   const handleAdd = () => {
     setEditingBrand(null);
@@ -73,14 +103,11 @@ export default function BrandManagement() {
   const handleSave = async (form) => {
     try {
       setSaving(true);
-
       const formData = new FormData();
-
       formData.append("name", form.name);
       formData.append("description", form.description);
       formData.append("website", form.website);
       formData.append("active", form.active);
-
       if (form.logo) {
         formData.append("logo", form.logo);
       }
@@ -93,12 +120,13 @@ export default function BrandManagement() {
 
       setOpenModal(false);
       setEditingBrand(null);
-
       await loadBrands();
     } catch (error) {
       console.error("Save Brand Error:", error);
-      console.log("Status:", error.response?.status);
-      console.log("Data:", error.response?.data);
+      alert(
+        error.response?.data?.message ||
+          "Failed to save brand. Please try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -112,17 +140,14 @@ export default function BrandManagement() {
   const handleDelete = async () => {
     try {
       if (!selectedBrand) return;
-
       setDeleting(true);
-
       await deleteBrand(selectedBrand.id);
-
       setDeleteOpen(false);
       setSelectedBrand(null);
-
       await loadBrands();
     } catch (error) {
       console.error("Delete Brand Error:", error);
+      alert(error.response?.data?.message || "Failed to delete brand.");
     } finally {
       setDeleting(false);
     }
@@ -130,21 +155,12 @@ export default function BrandManagement() {
 
   const totalBrands = brands.length;
 
-  const totalProducts = brands.reduce(
-    (sum, brand) => sum + (brand.productCount ?? brand.products?.length ?? 0),
-    0
-  );
-
   return (
     <div className="space-y-6">
-
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Brand Management</h1>
-          <p className="text-gray-500">
-            Manage your product brands
-          </p>
+          <p className="text-gray-500">Manage your product brands</p>
         </div>
 
         <button
@@ -156,21 +172,13 @@ export default function BrandManagement() {
         </button>
       </div>
 
-      {/* Statistics */}
       <div className="grid gap-5 md:grid-cols-2">
-
         <div className="rounded-xl bg-white p-6 shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">
-                Total Brands
-              </p>
-
-              <h2 className="mt-2 text-3xl font-bold">
-                {totalBrands}
-              </h2>
+              <p className="text-sm text-gray-500">Total Brands</p>
+              <h2 className="mt-2 text-3xl font-bold">{totalBrands}</h2>
             </div>
-
             <Tag size={36} className="text-pink-500" />
           </div>
         </div>
@@ -178,30 +186,17 @@ export default function BrandManagement() {
         <div className="rounded-xl bg-white p-6 shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">
-                Total Products
-              </p>
-
-              <h2 className="mt-2 text-3xl font-bold">
-                {totalProducts}
-              </h2>
+              <p className="text-sm text-gray-500">Total Products</p>
+              <h2 className="mt-2 text-3xl font-bold">{totalProducts}</h2>
             </div>
-
             <Package size={36} className="text-blue-500" />
           </div>
         </div>
-
       </div>
 
-      {/* Search */}
       <div className="rounded-xl bg-white p-5 shadow">
         <div className="relative max-w-md">
-
-          <Search
-            className="absolute left-3 top-3 text-gray-400"
-            size={18}
-          />
-
+          <Search className="absolute left-3 top-3 text-gray-400" size={18} />
           <input
             type="text"
             placeholder="Search brand..."
@@ -209,11 +204,9 @@ export default function BrandManagement() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border py-3 pl-10 pr-4 outline-none focus:border-pink-500"
           />
-
         </div>
       </div>
 
-      {/* Table */}
       {loading ? (
         <div className="rounded-xl border bg-white p-10 text-center">
           Loading...
@@ -226,7 +219,6 @@ export default function BrandManagement() {
         />
       )}
 
-      {/* Modal */}
       <BrandModal
         open={openModal}
         onClose={() => {
@@ -238,7 +230,6 @@ export default function BrandManagement() {
         loading={saving}
       />
 
-      {/* Delete Modal */}
       <DeleteConfirmModal
         open={deleteOpen}
         title="Delete Brand"

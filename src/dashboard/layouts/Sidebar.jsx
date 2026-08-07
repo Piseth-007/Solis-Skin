@@ -97,6 +97,21 @@ export default function Sidebar() {
 
       {/* User + Logout */}
       <div className="border-t border-gray-200 p-4">
+        <button className="flex items-center gap-3 rounded-xl px-2 py-1 transition hover:bg-gray-100">
+          <UserCircle2 size={38} className="text-gray-500" />
+
+          <div className="hidden text-left md:block">
+            <p className="font-semibold text-gray-800">
+              {user?.fullName || "Guest"}
+            </p>
+
+            <p className="text-sm capitalize text-gray-500">
+              {user?.role?.toLowerCase() || "Administrator"}
+            </p>
+          </div>
+
+          {/* <ChevronDown size={18} className="hidden text-gray-500 md:block" /> */}
+        </button>
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-gray-700 transition hover:bg-red-50 hover:text-red-600"

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { getProductById } from "../api/productApi"; // adjust path if different
 
 const CartContext = createContext();
 
@@ -18,7 +19,7 @@ export function CartProvider({ children }) {
   const addToCart = (product, quantity = 1) => {
     setCart((prev) => {
       const exist = prev.find((item) => item.id === product.id);
-      
+
       if (exist) {
         const newQuantity = Math.min(
           exist.quantity + quantity,
@@ -108,6 +109,48 @@ export function CartProvider({ children }) {
   };
 
   // ===============================
+  // Sync Cart With Live Product Data
+  // Refreshes stock/price for each cart item from the backend,
+  // clamping quantity down if stock has dropped since the item
+  // was added. Call this when the Cart page loads.
+  // ===============================
+  const syncCartWithProducts = async () => {
+    setCart((current) => current); // no-op to read latest state safely below
+
+    let latestCart;
+    setCart((current) => {
+      latestCart = current;
+      return current;
+    });
+
+    if (!latestCart || latestCart.length === 0) return;
+
+    try {
+      const updated = await Promise.all(
+        latestCart.map(async (item) => {
+          try {
+            const fresh = await getProductById(item.id);
+            return {
+              ...item,
+              stock: fresh.stock,
+              price: fresh.price,
+              quantity: Math.min(item.quantity, fresh.stock ?? item.quantity),
+            };
+          } catch (err) {
+            console.error(`Failed to sync product ${item.id}:`, err);
+            // Product may have been deleted or is unavailable — keep item as-is
+            return item;
+          }
+        }),
+      );
+
+      setCart(updated);
+    } catch (error) {
+      console.error("Failed to sync cart with live product data:", error);
+    }
+  };
+
+  // ===============================
   // Totals
   // ===============================
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -129,6 +172,7 @@ export function CartProvider({ children }) {
         clearCart,
         totalItems,
         totalPrice,
+        syncCartWithProducts,
       }}
     >
       {children}

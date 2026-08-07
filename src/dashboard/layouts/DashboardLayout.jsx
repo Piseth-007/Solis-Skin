@@ -10,7 +10,7 @@ export default function DashboardLayout() {
 
       {/* Main */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
+        {/* <Header /> */}
 
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />

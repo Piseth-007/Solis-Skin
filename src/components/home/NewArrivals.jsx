@@ -28,7 +28,7 @@ export default function NewArrivals({ products = [] }) {
         <div className="mb-16 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
           <div>
             <span className="inline-flex rounded-full bg-rose-100 px-5 py-2 text-sm font-semibold text-rose-600">
-              ✨ Just Arrived
+               Just Arrived
             </span>
 
             <h2 className="mt-6 text-4xl font-bold text-gray-900 md:text-5xl">
