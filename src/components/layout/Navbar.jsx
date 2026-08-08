@@ -189,7 +189,7 @@ export default function Navbar() {
             setSearchOpen(false);
             setSearchQuery("");
           }}
-          className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 px-4 pt-24 backdrop-blur-sm"
+          className="fixed inset-0 z-60 flex items-start justify-center bg-black/50 px-4 pt-24 backdrop-blur-sm"
         >
           <div
             onClick={(e) => e.stopPropagation()}

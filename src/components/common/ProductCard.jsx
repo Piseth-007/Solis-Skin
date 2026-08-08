@@ -27,8 +27,8 @@ export default function ProductCard({ product, view = "grid" }) {
           {/* Image */}
           <Link to={`/product/${product.id}`} className="relative lg:w-80">
             <img
-              src={product.image}
-              alt={product.name}
+              src={`http://localhost:8080${product.imageUrl}`}
+              alt={product.brandname}
               className="h-80 w-full object-cover"
             />
 

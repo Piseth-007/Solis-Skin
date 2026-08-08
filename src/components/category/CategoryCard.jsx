@@ -6,7 +6,7 @@ export default function CategoryCard({ category }) {
   return (
     <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.25 }}>
       <Link
-        to={`/category/${category.id}`}
+        to={`/categories/${category.id}`}
         className="group flex h-full flex-col rounded-3xl bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-2xl"
       >
         {/* Icon */}

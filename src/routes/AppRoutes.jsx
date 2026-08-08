@@ -62,7 +62,7 @@ export default function AppRoutes() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<WishList />} />
           <Route path="/categories" element={<Categories />} />
-          <Route path="/category/:id" element={<CategoryProducts />} />
+          <Route path="/categories/:id" element={<CategoryProducts />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
 

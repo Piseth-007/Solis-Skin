@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Grid3X3, List, Search } from "lucide-react";
+import { Grid3X3, List, Search, Loader2 } from "lucide-react";
 
-import { getCategoryById } from "../api/categoryApi";
-import { getProducts } from "../api/productApi";
+import { getCategories } from "../api/categoryApi";
+import { getAllProducts } from "../api/productApi";
 
 import ProductCard from "../components/common/ProductCard";
 import ProductListCard from "../components/common/ProductListCard";
@@ -14,6 +14,7 @@ export default function CategoryProducts() {
 
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
@@ -23,28 +24,81 @@ export default function CategoryProducts() {
   const [priceFilter, setPriceFilter] = useState("all");
   const [inStockOnly, setInStockOnly] = useState(false);
 
+  // ============================
+  // Load Data
+  // ============================
+
   useEffect(() => {
     loadData();
   }, [id]);
 
   const loadData = async () => {
     try {
-      const categoryData = await getCategoryById(id);
-      const productData = await getProducts();
+      setLoading(true);
+
+      console.log("==============================");
+
+      console.log("CATEGORY URL ID:", id);
+
+      // ============================
+      // Get Categories
+      // ============================
+
+      const categories = await getCategories();
+
+      console.log("ALL CATEGORIES:", categories);
+
+      const categoryData = categories.find(
+        (category) => Number(category.id) === Number(id),
+      );
+
+      console.log("SELECTED CATEGORY:", categoryData);
+
+      if (!categoryData) {
+        console.error("CATEGORY NOT FOUND:", id);
+
+        setCategory(null);
+        setProducts([]);
+
+        return;
+      }
 
       setCategory(categoryData);
 
-      const categoryProducts = productData.filter(
-        (product) => product.categoryId === categoryData.id,
+      // ============================
+      // Get ALL Products
+      // ============================
+
+      const allProducts = await getAllProducts();
+
+      console.log("ALL PRODUCTS AFTER CONVERSION:", allProducts);
+
+      // ============================
+      // Filter Category
+      // ============================
+
+      const categoryProducts = allProducts.filter(
+        (product) => Number(product.categoryId) === Number(categoryData.id),
       );
+
+      console.log("CATEGORY ID:", categoryData.id);
+
+      console.log("CATEGORY PRODUCTS:", categoryProducts);
 
       setProducts(categoryProducts);
     } catch (error) {
-      console.error("Failed to load category products:", error);
+      console.error("FAILED TO LOAD CATEGORY:", error);
+
+      setCategory(null);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
+
+  // ============================
+  // Clear Filters
+  // ============================
 
   const clearFilters = () => {
     setSearch("");
@@ -53,28 +107,37 @@ export default function CategoryProducts() {
     setInStockOnly(false);
   };
 
+  // ============================
+  // Filter Products
+  // ============================
+
   const filteredProducts = useMemo(() => {
     let data = [...products];
 
     // Search
     if (search.trim()) {
+      const searchText = search.toLowerCase().trim();
+
       data = data.filter((product) =>
-        product.name.toLowerCase().includes(search.toLowerCase()),
+        product.name.toLowerCase().includes(searchText),
       );
     }
 
     // Price
     switch (priceFilter) {
       case "under20":
-        data = data.filter((p) => p.price < 20);
+        data = data.filter((product) => Number(product.price) < 20);
         break;
 
       case "20to50":
-        data = data.filter((p) => p.price >= 20 && p.price <= 50);
+        data = data.filter(
+          (product) =>
+            Number(product.price) >= 20 && Number(product.price) <= 50,
+        );
         break;
 
       case "over50":
-        data = data.filter((p) => p.price > 50);
+        data = data.filter((product) => Number(product.price) > 50);
         break;
 
       default:
@@ -83,17 +146,17 @@ export default function CategoryProducts() {
 
     // Stock
     if (inStockOnly) {
-      data = data.filter((p) => p.stock > 0);
+      data = data.filter((product) => Number(product.stock) > 0);
     }
 
     // Sort
     switch (sortBy) {
       case "price-low":
-        data.sort((a, b) => a.price - b.price);
+        data.sort((a, b) => Number(a.price) - Number(b.price));
         break;
 
       case "price-high":
-        data.sort((a, b) => b.price - a.price);
+        data.sort((a, b) => Number(b.price) - Number(a.price));
         break;
 
       case "name":
@@ -107,24 +170,51 @@ export default function CategoryProducts() {
     return data;
   }, [products, search, priceFilter, inStockOnly, sortBy]);
 
+  // ============================
+  // Loading
+  // ============================
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-lg font-semibold text-gray-600">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-rose-600" />
+
+          <p className="text-gray-500">Loading products...</p>
+        </div>
       </div>
     );
   }
 
+  // ============================
+  // Category Not Found
+  // ============================
+
   if (!category) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <h1 className="text-3xl font-bold">Category Not Found</h1>
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold">Category Not Found</h1>
+
+          <p className="mt-3 text-gray-500">Category ID: {id}</p>
+
+          <Link
+            to="/categories"
+            className="mt-6 inline-block rounded-full bg-rose-600 px-6 py-3 font-semibold text-white hover:bg-rose-700"
+          >
+            Back to Categories
+          </Link>
+        </div>
       </div>
     );
   }
+
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Hero */}
+      {/* ============================
+          Hero
+      ============================ */}
+
       <section className="border-b bg-white">
         <div className="mx-auto max-w-7xl px-6 py-14">
           <div className="text-sm text-gray-500">
@@ -140,10 +230,12 @@ export default function CategoryProducts() {
 
             <span className="mx-2">/</span>
 
-            <span>{category.name}</span>
+            <span className="font-medium text-gray-900">{category.name}</span>
           </div>
 
-          <h1 className="mt-4 text-5xl font-bold">{category.name}</h1>
+          <h1 className="mt-4 text-4xl font-bold md:text-5xl">
+            {category.name}
+          </h1>
 
           <p className="mt-4 max-w-2xl text-gray-500">
             {category.description ||
@@ -152,11 +244,16 @@ export default function CategoryProducts() {
         </div>
       </section>
 
-      {/* Content */}
+      {/* ============================
+          Products
+      ============================ */}
+
       <section className="mx-auto max-w-7xl px-6 py-12">
         <div className="grid gap-10 lg:grid-cols-4">
           {/* Sidebar */}
+
           <FilterSidebar
+            products={products}
             priceFilter={priceFilter}
             setPriceFilter={setPriceFilter}
             inStockOnly={inStockOnly}
@@ -164,9 +261,11 @@ export default function CategoryProducts() {
             clearFilters={clearFilters}
           />
 
-          {/* Products */}
+          {/* Product Area */}
+
           <div className="lg:col-span-3">
             {/* Toolbar */}
+
             <div className="mb-8 rounded-2xl bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 <div>
@@ -181,6 +280,7 @@ export default function CategoryProducts() {
 
                 <div className="flex flex-wrap gap-4">
                   {/* Search */}
+
                   <div className="relative">
                     <Search
                       size={18}
@@ -192,27 +292,33 @@ export default function CategoryProducts() {
                       placeholder="Search products..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="rounded-xl border py-2 pl-10 pr-4 focus:border-rose-500 focus:outline-none"
+                      className="w-full rounded-xl border py-2 pl-10 pr-4 focus:border-rose-500 focus:outline-none sm:w-64"
                     />
                   </div>
 
                   {/* Sort */}
+
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="rounded-xl border px-4 focus:border-rose-500 focus:outline-none"
                   >
                     <option value="default">Featured</option>
+
                     <option value="price-low">Price: Low → High</option>
+
                     <option value="price-high">Price: High → Low</option>
+
                     <option value="name">Name A-Z</option>
                   </select>
 
                   {/* View */}
+
                   <div className="flex overflow-hidden rounded-xl border">
                     <button
+                      type="button"
                       onClick={() => setView("grid")}
-                      className={`p-2 transition ${
+                      className={`p-2 ${
                         view === "grid" ? "bg-rose-600 text-white" : "bg-white"
                       }`}
                     >
@@ -220,8 +326,9 @@ export default function CategoryProducts() {
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => setView("list")}
-                      className={`p-2 transition ${
+                      className={`p-2 ${
                         view === "list" ? "bg-rose-600 text-white" : "bg-white"
                       }`}
                     >
@@ -232,18 +339,21 @@ export default function CategoryProducts() {
               </div>
             </div>
 
-            {/* Products */}
+            {/* ============================
+                Product List
+            ============================ */}
+
             {filteredProducts.length === 0 ? (
               <div className="rounded-2xl bg-white py-20 text-center shadow-sm">
                 <h3 className="text-2xl font-bold">No Products Found</h3>
 
                 <p className="mt-3 text-gray-500">
-                  Try changing your search or filters.
+                  There are no products in this category.
                 </p>
 
                 <button
                   onClick={clearFilters}
-                  className="mt-6 rounded-full bg-rose-600 px-6 py-3 text-white transition hover:bg-rose-700"
+                  className="mt-6 rounded-full bg-rose-600 px-6 py-3 text-white hover:bg-rose-700"
                 >
                   Clear Filters
                 </button>
