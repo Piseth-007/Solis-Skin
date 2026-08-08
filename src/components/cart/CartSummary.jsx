@@ -2,19 +2,23 @@ import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 
 export default function CartSummary() {
-  const { totalPrice } = useCart();
+  const { totalPrice, totalItems } = useCart();
 
   const shipping = totalPrice >= 50 ? 0 : 5;
   const tax = totalPrice * 0.1;
   const total = totalPrice + shipping + tax;
 
+  const isEmpty = totalItems === 0;
+
   return (
-    <div className="sticky top-24 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="rounded-3xl bg-white p-6 shadow-sm">
+      {/* Title */}
       <h2 className="mb-6 text-2xl font-bold">Order Summary</h2>
 
       {/* Subtotal */}
       <div className="mb-3 flex justify-between">
         <span className="text-gray-600">Subtotal</span>
+
         <span className="font-semibold">${totalPrice.toFixed(2)}</span>
       </div>
 
@@ -32,6 +36,7 @@ export default function CartSummary() {
       {/* Tax */}
       <div className="mb-5 flex justify-between">
         <span className="text-gray-600">Tax (10%)</span>
+
         <span className="font-semibold">${tax.toFixed(2)}</span>
       </div>
 
@@ -40,16 +45,26 @@ export default function CartSummary() {
       {/* Total */}
       <div className="mb-8 flex justify-between text-xl font-bold">
         <span>Total</span>
-        <span>${total.toFixed(2)}</span>
+
+        <span className="text-rose-600">${total.toFixed(2)}</span>
       </div>
 
       {/* Checkout */}
-      <Link
-        to="/checkout"
-        className="block w-full rounded-full bg-rose-600 py-3 text-center font-semibold text-white transition hover:bg-rose-700"
-      >
-        Proceed to Checkout
-      </Link>
+      {isEmpty ? (
+        <button
+          disabled
+          className="block w-full cursor-not-allowed rounded-full bg-gray-300 py-3 text-center font-semibold text-gray-500"
+        >
+          Cart is Empty
+        </button>
+      ) : (
+        <Link
+          to="/checkout"
+          className="block w-full rounded-full bg-rose-600 py-3 text-center font-semibold text-white transition hover:bg-rose-700"
+        >
+          Proceed to Checkout
+        </Link>
+      )}
 
       {/* Continue Shopping */}
       <Link
@@ -58,6 +73,20 @@ export default function CartSummary() {
       >
         Continue Shopping
       </Link>
+
+      {/* Free Shipping Message */}
+      {!isEmpty && totalPrice < 50 && (
+        <p className="mt-4 text-center text-sm text-gray-500">
+          Add ${(50 - totalPrice).toFixed(2)} more to get{" "}
+          <strong>FREE shipping</strong>.
+        </p>
+      )}
+
+      {!isEmpty && totalPrice >= 50 && (
+        <p className="mt-4 text-center text-sm font-medium text-green-600">
+           You have FREE shipping!
+        </p>
+      )}
     </div>
   );
 }
